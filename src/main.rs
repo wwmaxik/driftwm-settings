@@ -8,8 +8,9 @@ use ui_helpers::*;
 
 use gtk4::prelude::*;
 use gtk4::{
-    Adjustment, Application, ApplicationWindow, Box, Button, Entry, Label, Orientation,
-    ScrolledWindow, SpinButton, Stack, StackSidebar, Switch, TextBuffer, TextView,
+    Adjustment, Application, ApplicationWindow, Box, Button, ComboBoxText, DropDown, Entry, Label,
+    Orientation, ScrolledWindow, SpinButton, Stack, StackSidebar, StringList, Switch, TextBuffer,
+    TextView,
 };
 use std::cell::RefCell;
 use std::path::PathBuf;
@@ -112,25 +113,51 @@ fn add_general_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     add_header(&page, "General Settings");
 
-    // Mod key
+    // Mod key with dropdown
     let mod_box = create_row();
     add_label(&mod_box, "Modifier key:", 200);
+
+    let mod_combo = ComboBoxText::new();
+    mod_combo.append(Some("super"), "Super (Windows key)");
+    mod_combo.append(Some("alt"), "Alt");
+    mod_combo.append(Some("custom"), "Custom...");
+
+    let current_mod = config
+        .borrow()
+        .mod_key
+        .clone()
+        .unwrap_or_else(|| "super".to_string());
+    if current_mod == "super" || current_mod == "alt" {
+        mod_combo.set_active_id(Some(&current_mod));
+    } else {
+        mod_combo.set_active_id(Some("custom"));
+    }
+
     let mod_entry = Entry::new();
-    mod_entry.set_text(
-        &config
-            .borrow()
-            .mod_key
-            .clone()
-            .unwrap_or_else(|| "super".to_string()),
-    );
-    mod_entry.set_placeholder_text(Some("super or alt"));
+    mod_entry.set_text(&current_mod);
     mod_entry.set_hexpand(true);
+    mod_entry.set_visible(current_mod != "super" && current_mod != "alt");
+
+    let config_clone = config.clone();
+    let entry_clone = mod_entry.clone();
+    mod_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let id_str = id.as_str();
+            if id_str == "custom" {
+                entry_clone.set_visible(true);
+            } else {
+                entry_clone.set_visible(false);
+                config_clone.borrow_mut().mod_key = Some(id_str.to_string());
+            }
+        }
+    });
 
     let config_clone = config.clone();
     mod_entry.connect_changed(move |entry| {
         config_clone.borrow_mut().mod_key = Some(entry.text().to_string());
     });
 
+    mod_box.append(&mod_combo);
     mod_box.append(&mod_entry);
     page.append(&mod_box);
 
@@ -221,21 +248,67 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     variant_box.append(&variant_entry);
     page.append(&variant_box);
 
-    // Options
+    // Options with dropdown
     let options_box = create_row();
     add_label(&options_box, "Options:", 200);
+
+    let options_combo = ComboBoxText::new();
+    options_combo.append(Some("grp:win_space_toggle"), "Super+Space to switch layout");
+    options_combo.append(Some("grp:alt_shift_toggle"), "Alt+Shift to switch layout");
+    options_combo.append(Some("grp:ctrl_shift_toggle"), "Ctrl+Shift to switch layout");
+    options_combo.append(Some("caps:escape"), "Caps Lock as Escape");
+    options_combo.append(Some("caps:ctrl_modifier"), "Caps Lock as Ctrl");
+    options_combo.append(Some("custom"), "Custom...");
+
+    let current_options = config
+        .borrow()
+        .input
+        .as_ref()
+        .and_then(|i| i.keyboard.as_ref())
+        .and_then(|k| k.options.clone())
+        .unwrap_or_default();
+
+    let is_predefined = [
+        "grp:win_space_toggle",
+        "grp:alt_shift_toggle",
+        "grp:ctrl_shift_toggle",
+        "caps:escape",
+        "caps:ctrl_modifier",
+    ]
+    .contains(&current_options.as_str());
+
+    if is_predefined {
+        options_combo.set_active_id(Some(&current_options));
+    } else if !current_options.is_empty() {
+        options_combo.set_active_id(Some("custom"));
+    }
+
     let options_entry = Entry::new();
-    options_entry.set_text(
-        &config
-            .borrow()
-            .input
-            .as_ref()
-            .and_then(|i| i.keyboard.as_ref())
-            .and_then(|k| k.options.clone())
-            .unwrap_or_default(),
-    );
-    options_entry.set_placeholder_text(Some("grp:win_space_toggle"));
+    options_entry.set_text(&current_options);
     options_entry.set_hexpand(true);
+    options_entry.set_visible(!is_predefined && !current_options.is_empty());
+
+    let config_clone = config.clone();
+    let entry_clone = options_entry.clone();
+    options_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let id_str = id.as_str();
+            if id_str == "custom" {
+                entry_clone.set_visible(true);
+            } else {
+                entry_clone.set_visible(false);
+                let mut cfg = config_clone.borrow_mut();
+                ensure_input_keyboard(&mut cfg);
+                cfg.input
+                    .as_mut()
+                    .unwrap()
+                    .keyboard
+                    .as_mut()
+                    .unwrap()
+                    .options = Some(id_str.to_string());
+            }
+        }
+    });
 
     let config_clone = config.clone();
     options_entry.connect_changed(move |entry| {
@@ -250,6 +323,7 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .options = Some(entry.text().to_string());
     });
 
+    options_box.append(&options_combo);
     options_box.append(&options_entry);
     page.append(&options_box);
 
@@ -487,6 +561,143 @@ fn add_trackpad_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     accel_box.append(&accel_spin);
     page.append(&accel_box);
 
+    // Acceleration profile with dropdown
+    let profile_box = create_row();
+    add_label(&profile_box, "Acceleration profile:", 200);
+
+    let profile_combo = ComboBoxText::new();
+    profile_combo.append(Some("adaptive"), "Adaptive");
+    profile_combo.append(Some("flat"), "Flat");
+    profile_combo.append(Some("custom"), "Custom...");
+
+    let current_profile = config
+        .borrow()
+        .input
+        .as_ref()
+        .and_then(|i| i.trackpad.as_ref())
+        .and_then(|t| t.accel_profile.clone())
+        .unwrap_or_else(|| "adaptive".to_string());
+
+    if current_profile == "adaptive" || current_profile == "flat" {
+        profile_combo.set_active_id(Some(&current_profile));
+    } else {
+        profile_combo.set_active_id(Some("custom"));
+    }
+
+    let profile_entry = Entry::new();
+    profile_entry.set_text(&current_profile);
+    profile_entry.set_hexpand(true);
+    profile_entry.set_visible(current_profile != "adaptive" && current_profile != "flat");
+
+    let config_clone = config.clone();
+    let entry_clone = profile_entry.clone();
+    profile_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let id_str = id.as_str();
+            if id_str == "custom" {
+                entry_clone.set_visible(true);
+            } else {
+                entry_clone.set_visible(false);
+                let mut cfg = config_clone.borrow_mut();
+                ensure_input_trackpad(&mut cfg);
+                cfg.input
+                    .as_mut()
+                    .unwrap()
+                    .trackpad
+                    .as_mut()
+                    .unwrap()
+                    .accel_profile = Some(id_str.to_string());
+            }
+        }
+    });
+
+    let config_clone = config.clone();
+    profile_entry.connect_changed(move |entry| {
+        let mut cfg = config_clone.borrow_mut();
+        ensure_input_trackpad(&mut cfg);
+        cfg.input
+            .as_mut()
+            .unwrap()
+            .trackpad
+            .as_mut()
+            .unwrap()
+            .accel_profile = Some(entry.text().to_string());
+    });
+
+    profile_box.append(&profile_combo);
+    profile_box.append(&profile_entry);
+    page.append(&profile_box);
+
+    // Click method with dropdown
+    let click_box = create_row();
+    add_label(&click_box, "Click method:", 200);
+
+    let click_combo = ComboBoxText::new();
+    click_combo.append(Some("none"), "Device Default");
+    click_combo.append(Some("clickfinger"), "Clickfinger (1=L, 2=R, 3=M)");
+    click_combo.append(Some("button_areas"), "Button Areas (Bottom L/R)");
+    click_combo.append(Some("custom"), "Custom...");
+
+    let current_click = config
+        .borrow()
+        .input
+        .as_ref()
+        .and_then(|i| i.trackpad.as_ref())
+        .and_then(|t| t.click_method.clone())
+        .unwrap_or_else(|| "none".to_string());
+
+    let is_predefined = ["none", "clickfinger", "button_areas"].contains(&current_click.as_str());
+
+    if is_predefined {
+        click_combo.set_active_id(Some(&current_click));
+    } else {
+        click_combo.set_active_id(Some("custom"));
+    }
+
+    let click_entry = Entry::new();
+    click_entry.set_text(&current_click);
+    click_entry.set_hexpand(true);
+    click_entry.set_visible(!is_predefined);
+
+    let config_clone = config.clone();
+    let entry_clone = click_entry.clone();
+    click_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let id_str = id.as_str();
+            if id_str == "custom" {
+                entry_clone.set_visible(true);
+            } else {
+                entry_clone.set_visible(false);
+                let mut cfg = config_clone.borrow_mut();
+                ensure_input_trackpad(&mut cfg);
+                cfg.input
+                    .as_mut()
+                    .unwrap()
+                    .trackpad
+                    .as_mut()
+                    .unwrap()
+                    .click_method = Some(id_str.to_string());
+            }
+        }
+    });
+
+    let config_clone = config.clone();
+    click_entry.connect_changed(move |entry| {
+        let mut cfg = config_clone.borrow_mut();
+        ensure_input_trackpad(&mut cfg);
+        cfg.input
+            .as_mut()
+            .unwrap()
+            .trackpad
+            .as_mut()
+            .unwrap()
+            .click_method = Some(entry.text().to_string());
+    });
+
+    click_box.append(&click_combo);
+    click_box.append(&click_entry);
+    page.append(&click_box);
+
     stack.add_titled(&page, Some("trackpad"), "Trackpad");
 }
 
@@ -529,21 +740,55 @@ fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     accel_box.append(&accel_spin);
     page.append(&accel_box);
 
-    // Acceleration profile
+    // Acceleration profile with dropdown
     let profile_box = create_row();
     add_label(&profile_box, "Acceleration profile:", 200);
+
+    let profile_combo = ComboBoxText::new();
+    profile_combo.append(Some("adaptive"), "Adaptive");
+    profile_combo.append(Some("flat"), "Flat");
+    profile_combo.append(Some("custom"), "Custom...");
+
+    let current_profile = config
+        .borrow()
+        .input
+        .as_ref()
+        .and_then(|i| i.mouse.as_ref())
+        .and_then(|m| m.accel_profile.clone())
+        .unwrap_or_else(|| "flat".to_string());
+
+    if current_profile == "adaptive" || current_profile == "flat" {
+        profile_combo.set_active_id(Some(&current_profile));
+    } else {
+        profile_combo.set_active_id(Some("custom"));
+    }
+
     let profile_entry = Entry::new();
-    profile_entry.set_text(
-        &config
-            .borrow()
-            .input
-            .as_ref()
-            .and_then(|i| i.mouse.as_ref())
-            .and_then(|m| m.accel_profile.clone())
-            .unwrap_or_else(|| "flat".to_string()),
-    );
-    profile_entry.set_placeholder_text(Some("adaptive or flat"));
+    profile_entry.set_text(&current_profile);
     profile_entry.set_hexpand(true);
+    profile_entry.set_visible(current_profile != "adaptive" && current_profile != "flat");
+
+    let config_clone = config.clone();
+    let entry_clone = profile_entry.clone();
+    profile_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let id_str = id.as_str();
+            if id_str == "custom" {
+                entry_clone.set_visible(true);
+            } else {
+                entry_clone.set_visible(false);
+                let mut cfg = config_clone.borrow_mut();
+                ensure_input_mouse(&mut cfg);
+                cfg.input
+                    .as_mut()
+                    .unwrap()
+                    .mouse
+                    .as_mut()
+                    .unwrap()
+                    .accel_profile = Some(id_str.to_string());
+            }
+        }
+    });
 
     let config_clone = config.clone();
     profile_entry.connect_changed(move |entry| {
@@ -558,6 +803,7 @@ fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .accel_profile = Some(entry.text().to_string());
     });
 
+    profile_box.append(&profile_combo);
     profile_box.append(&profile_entry);
     page.append(&profile_box);
 
@@ -603,16 +849,50 @@ fn add_cursor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     // Theme
     let theme_box = create_row();
     add_label(&theme_box, "Cursor theme:", 200);
+
+    let theme_combo = ComboBoxText::new();
+    theme_combo.append(Some("Adwaita"), "Adwaita (Default)");
+    theme_combo.append(Some("Yaru"), "Yaru");
+    theme_combo.append(Some("Breeze_Snow"), "Breeze Snow");
+    theme_combo.append(Some("custom"), "Custom...");
+
+    let current_theme = config
+        .borrow()
+        .cursor
+        .as_ref()
+        .and_then(|c| c.theme.clone())
+        .unwrap_or_else(|| "Adwaita".to_string());
+
+    let is_predefined = ["Adwaita", "Yaru", "Breeze_Snow"].contains(&current_theme.as_str());
+
+    if is_predefined {
+        theme_combo.set_active_id(Some(&current_theme));
+    } else {
+        theme_combo.set_active_id(Some("custom"));
+    }
+
     let theme_entry = Entry::new();
-    theme_entry.set_text(
-        &config
-            .borrow()
-            .cursor
-            .as_ref()
-            .and_then(|c| c.theme.clone())
-            .unwrap_or_else(|| "Adwaita".to_string()),
-    );
+    theme_entry.set_text(&current_theme);
     theme_entry.set_hexpand(true);
+    theme_entry.set_visible(!is_predefined);
+
+    let config_clone = config.clone();
+    let entry_clone = theme_entry.clone();
+    theme_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let id_str = id.as_str();
+            if id_str == "custom" {
+                entry_clone.set_visible(true);
+            } else {
+                entry_clone.set_visible(false);
+                let mut cfg = config_clone.borrow_mut();
+                if cfg.cursor.is_none() {
+                    cfg.cursor = Some(CursorConfig::default());
+                }
+                cfg.cursor.as_mut().unwrap().theme = Some(id_str.to_string());
+            }
+        }
+    });
 
     let config_clone = config.clone();
     theme_entry.connect_changed(move |entry| {
@@ -623,6 +903,7 @@ fn add_cursor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
         cfg.cursor.as_mut().unwrap().theme = Some(entry.text().to_string());
     });
 
+    theme_box.append(&theme_combo);
     theme_box.append(&theme_entry);
     page.append(&theme_box);
 
