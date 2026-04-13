@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DriftwmConfig {
@@ -10,6 +11,9 @@ pub struct DriftwmConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub autostart: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub env: Option<HashMap<String, String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub input: Option<InputConfig>,
@@ -25,6 +29,18 @@ pub struct DriftwmConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snap: Option<SnapConfig>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decorations: Option<DecorationsConfig>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub effects: Option<EffectsConfig>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output: Option<OutputConfig>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub background: Option<BackgroundConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -36,7 +52,7 @@ pub struct InputConfig {
     pub trackpad: Option<TrackpadConfig>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub scroll: Option<ScrollConfig>,
+    pub mouse: Option<MouseConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -51,10 +67,16 @@ pub struct KeyboardConfig {
     pub options: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub repeat_rate: Option<i32>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub repeat_delay: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layout_independent: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -70,15 +92,24 @@ pub struct TrackpadConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub accel_speed: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub accel_profile: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub click_method: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ScrollConfig {
+pub struct MouseConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub speed: Option<f64>,
+    pub accel_speed: Option<f64>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub friction: Option<f64>,
+    pub accel_profile: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub natural_scroll: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -88,15 +119,48 @@ pub struct CursorConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub size: Option<u32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inactive_opacity: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NavigationConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub trackpad_speed: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mouse_speed: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub friction: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub animation_speed: Option<f64>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nudge_step: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pan_step: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub anchors: Option<Vec<[f64; 2]>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub edge_pan: Option<EdgePanConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct EdgePanConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub zone: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speed_min: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speed_max: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -118,6 +182,60 @@ pub struct SnapConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub distance: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub break_force: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub same_edge: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DecorationsConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bg_color: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fg_color: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub corner_radius: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct EffectsConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blur_radius: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blur_strength: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct OutputConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub outline: Option<OutputOutlineConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct OutputOutlineConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thickness: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub opacity: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BackgroundConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub shader_path: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tile_path: Option<String>,
 }
 
 impl DriftwmConfig {
