@@ -1,0 +1,47 @@
+/* Minimal driftwm Settings Styles */
+
+/* Navigation sidebar */
+.navigation-sidebar row {
+    border-radius: 4px;
+    margin: 1px 0;
+    padding: 6px 10px;
+}
+
+/* Status bar */
+.statusbar {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    min-height: 28px;
+}
+
+/* Typography */
+.title-1 {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.title-3 {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.caption {
+    font-size: 11px;
+}
+
+.dim-label {
+    opacity: 0.55;
+}
+
+/* Form controls */
+entry, spinbutton {
+    border-radius: 4px;
+}
+
+switch {
+    border-radius: 10px;
+}
+
+button {
+    border-radius: 4px;
+    padding: 6px 12px;
+}

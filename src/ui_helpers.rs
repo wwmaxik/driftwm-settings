@@ -3,10 +3,10 @@ use gtk4::{Box, Label, Orientation};
 
 pub fn create_page() -> Box {
     let page = Box::new(Orientation::Vertical, 12);
-    page.set_margin_top(12);
-    page.set_margin_bottom(12);
-    page.set_margin_start(12);
-    page.set_margin_end(12);
+    page.set_margin_top(18);
+    page.set_margin_bottom(18);
+    page.set_margin_start(18);
+    page.set_margin_end(18);
     page
 }
 
@@ -31,17 +31,8 @@ pub fn add_label(container: &Box, text: &str, width: i32) {
 
 pub fn add_header(container: &Box, text: &str) {
     let header = Label::new(Some(text));
-    header.add_css_class("title-2");
+    header.add_css_class("title-1");
     header.set_halign(gtk4::Align::Start);
     header.set_margin_bottom(12);
-    container.append(&header);
-}
-
-pub fn add_section_header(container: &Box, text: &str) {
-    let header = Label::new(Some(text));
-    header.add_css_class("title-4");
-    header.set_halign(gtk4::Align::Start);
-    header.set_margin_top(12);
-    header.set_margin_bottom(6);
     container.append(&header);
 }

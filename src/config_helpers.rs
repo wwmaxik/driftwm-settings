@@ -32,10 +32,3 @@ pub fn ensure_navigation(cfg: &mut DriftwmConfig) {
         cfg.navigation = Some(NavigationConfig::default());
     }
 }
-
-pub fn ensure_navigation_edge_pan(cfg: &mut DriftwmConfig) {
-    ensure_navigation(cfg);
-    if cfg.navigation.as_mut().unwrap().edge_pan.is_none() {
-        cfg.navigation.as_mut().unwrap().edge_pan = Some(EdgePanConfig::default());
-    }
-}

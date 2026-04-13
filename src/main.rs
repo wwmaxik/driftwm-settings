@@ -8,8 +8,8 @@ use ui_helpers::*;
 
 use gtk4::prelude::*;
 use gtk4::{
-    Adjustment, Application, ApplicationWindow, Box, Button, ComboBoxText, DropDown, Entry, Label,
-    Orientation, ScrolledWindow, SpinButton, Stack, StackSidebar, StringList, Switch, TextBuffer,
+    Adjustment, Application, ApplicationWindow, Box, Button, ComboBoxText, CssProvider, Entry,
+    HeaderBar, Label, Orientation, ScrolledWindow, SpinButton, Stack, StackSidebar, Switch,
     TextView,
 };
 use std::cell::RefCell;
@@ -20,6 +20,18 @@ const APP_ID: &str = "com.github.driftwm.settings";
 
 fn main() {
     let app = Application::builder().application_id(APP_ID).build();
+
+    app.connect_startup(|_| {
+        // Load CSS
+        let provider = CssProvider::new();
+        provider.load_from_data(include_str!("../style.css"));
+        gtk4::style_context_add_provider_for_display(
+            &gtk4::gdk::Display::default().expect("Could not connect to display"),
+            &provider,
+            gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
+    });
+
     app.connect_activate(build_ui);
     app.run();
 }
@@ -29,19 +41,23 @@ fn build_ui(app: &Application) {
     let config = DriftwmConfig::load(&config_path).unwrap_or_default();
     let config_rc = Rc::new(RefCell::new(config));
 
+    // Header Bar
+    let header = HeaderBar::new();
+
     // Main horizontal box (sidebar + content)
     let main_hbox = Box::new(Orientation::Horizontal, 0);
 
     // Stack for different pages
     let stack = Stack::new();
     stack.set_transition_type(gtk4::StackTransitionType::SlideLeftRight);
+    stack.set_transition_duration(150);
 
     // Sidebar
     let sidebar = StackSidebar::new();
     sidebar.set_stack(&stack);
-    sidebar.set_width_request(200);
+    sidebar.set_width_request(180);
 
-    // Add pages to stack
+    // Add pages to stack with icons
     add_general_page(&stack, config_rc.clone());
     add_keyboard_page(&stack, config_rc.clone());
     add_trackpad_page(&stack, config_rc.clone());
@@ -64,22 +80,23 @@ fn build_ui(app: &Application) {
     main_hbox.append(&sidebar);
     main_hbox.append(&scrolled);
 
-    // Bottom bar with buttons
-    let button_box = Box::new(Orientation::Horizontal, 6);
-    button_box.set_margin_top(6);
-    button_box.set_margin_bottom(6);
-    button_box.set_margin_start(6);
-    button_box.set_margin_end(6);
-    button_box.set_halign(gtk4::Align::End);
+    // Status bar at bottom
+    let statusbar = Box::new(Orientation::Horizontal, 12);
+    statusbar.set_margin_top(6);
+    statusbar.set_margin_bottom(6);
+    statusbar.set_margin_start(12);
+    statusbar.set_margin_end(12);
+    statusbar.add_css_class("statusbar");
 
-    // Config path label
-    let path_label = Label::new(Some(&format!("Config: {}", config_path.display())));
+    let path_label = Label::new(Some(&format!("{}", config_path.display())));
     path_label.add_css_class("dim-label");
-    path_label.set_hexpand(true);
+    path_label.add_css_class("caption");
     path_label.set_halign(gtk4::Align::Start);
-    button_box.append(&path_label);
+    path_label.set_hexpand(true);
+    statusbar.append(&path_label);
 
-    let save_button = Button::with_label("Save Configuration");
+    // Save button
+    let save_button = Button::with_label("Save");
     save_button.add_css_class("suggested-action");
 
     let config_clone = config_rc.clone();
@@ -89,22 +106,23 @@ fn build_ui(app: &Application) {
         Err(e) => eprintln!("✗ Failed to save config: {}", e),
     });
 
-    button_box.append(&save_button);
+    statusbar.append(&save_button);
 
     // Main layout
     let vbox = Box::new(Orientation::Vertical, 0);
     vbox.append(&main_hbox);
-    vbox.append(&button_box);
+    vbox.append(&statusbar);
 
     // Window
     let window = ApplicationWindow::builder()
         .application(app)
         .title("driftwm Settings")
-        .default_width(900)
-        .default_height(700)
+        .default_width(850)
+        .default_height(650)
         .child(&vbox)
         .build();
 
+    window.set_titlebar(Some(&header));
     window.present();
 }
 
@@ -113,7 +131,7 @@ fn add_general_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     add_header(&page, "General Settings");
 
-    // Mod key with dropdown
+    // Modifier key
     let mod_box = create_row();
     add_label(&mod_box, "Modifier key:", 200);
 
@@ -137,6 +155,7 @@ fn add_general_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     mod_entry.set_text(&current_mod);
     mod_entry.set_hexpand(true);
     mod_entry.set_visible(current_mod != "super" && current_mod != "alt");
+    mod_entry.set_placeholder_text(Some("e.g., ctrl, shift"));
 
     let config_clone = config.clone();
     let entry_clone = mod_entry.clone();
