@@ -5,6 +5,7 @@ Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Rust](https://img.shields.io/badge/rust-1.85%2B-orange)
 ![GTK](https://img.shields.io/badge/GTK-4-green)
+![License](https://img.shields.io/badge/license-GPLv3-blue)
 
 ## Features
 
