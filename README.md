@@ -2,6 +2,7 @@
 
 Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm) compositor.
 
+![CI](https://github.com/wwmaxik/driftwm-settings/workflows/CI/badge.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Rust](https://img.shields.io/badge/rust-1.85%2B-orange)
 ![GTK](https://img.shields.io/badge/GTK-4-green)
@@ -169,7 +170,17 @@ GPL-3.0-or-later (same as driftwm)
 
 ## Contributing
 
-This is a personal fork. For upstream driftwm, see [malbiruk/driftwm](https://github.com/malbiruk/driftwm).
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+- Fork the repository
+- Create a feature branch
+- Make your changes
+- Run tests: `cargo fmt`, `cargo clippy`, `cargo build`
+- Submit a pull request
+
+See also: [Code of Conduct](CODE_OF_CONDUCT.md)
+
+For upstream driftwm, see [malbiruk/driftwm](https://github.com/malbiruk/driftwm).
 
 ## Credits
 
