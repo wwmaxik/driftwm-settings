@@ -1,0 +1,10 @@
+[package]
+name = "driftwm-settings"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+gtk4 = "0.9"
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
+anyhow = "1"

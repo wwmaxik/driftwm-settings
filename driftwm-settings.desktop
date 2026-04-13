@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=driftwm Settings
+Comment=Configure driftwm compositor
+Exec=driftwm-settings
+Icon=preferences-system
+Terminal=false
+Type=Application
+Categories=Settings;DesktopSettings;GTK;
+Keywords=driftwm;wayland;compositor;settings;configuration;
