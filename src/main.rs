@@ -1790,6 +1790,66 @@ fn add_keybinding_row(
         key_entry.set_text(&key);
     }
 
+    // Record button
+    let record_button = Button::with_label("⏺");
+    record_button.set_tooltip_text(Some("Click and press keys to record"));
+    
+    let key_entry_clone = key_entry.clone();
+    let record_button_clone = record_button.clone();
+    record_button.connect_clicked(move |btn| {
+        btn.set_label("Press keys...");
+        btn.add_css_class("accent");
+        
+        // Create event controller for key press
+        let key_controller = gtk4::EventControllerKey::new();
+        let btn_clone = record_button_clone.clone();
+        let entry_clone = key_entry_clone.clone();
+        
+        key_controller.connect_key_pressed(move |controller, keyval, _keycode, state| {
+            let mut parts = Vec::new();
+            
+            // Add modifiers
+            if state.contains(gtk4::gdk::ModifierType::CONTROL_MASK) {
+                parts.push("ctrl");
+            }
+            if state.contains(gtk4::gdk::ModifierType::ALT_MASK) {
+                parts.push("alt");
+            }
+            if state.contains(gtk4::gdk::ModifierType::SHIFT_MASK) {
+                parts.push("shift");
+            }
+            if state.contains(gtk4::gdk::ModifierType::SUPER_MASK) {
+                parts.push("super");
+            }
+            
+            // Add key name
+            if let Some(name) = keyval.name() {
+                let key_name = name.to_lowercase();
+                // Skip modifier keys themselves
+                if !["control_l", "control_r", "alt_l", "alt_r", "shift_l", "shift_r", "super_l", "super_r"].contains(&key_name.as_str()) {
+                    parts.push(&key_name);
+                    
+                    // Set the combo
+                    let combo = parts.join("+");
+                    entry_clone.set_text(&combo);
+                    
+                    // Reset button
+                    btn_clone.set_label("⏺");
+                    btn_clone.remove_css_class("accent");
+                    
+                    // Remove controller
+                    if let Some(widget) = controller.widget() {
+                        widget.remove_controller(controller);
+                    }
+                }
+            }
+            
+            glib::Propagation::Stop
+        });
+        
+        btn.add_controller(key_controller);
+    });
+
     // Action entry
     let action_entry = Entry::new();
     action_entry.set_placeholder_text(Some("exec alacritty"));
@@ -1834,7 +1894,7 @@ fn add_keybinding_row(
         let action_text = action_entry_clone.text().to_string().trim().to_string();
 
         let mut cfg = config_clone.borrow_mut();
-
+        
         // Remove old key if it changed
         let old_key_val = old_key.borrow().clone();
         if !old_key_val.is_empty() && old_key_val != key_text {
@@ -1848,10 +1908,7 @@ fn add_keybinding_row(
             if cfg.keybindings.is_none() {
                 cfg.keybindings = Some(std::collections::HashMap::new());
             }
-            cfg.keybindings
-                .as_mut()
-                .unwrap()
-                .insert(key_text.clone(), action_text);
+            cfg.keybindings.as_mut().unwrap().insert(key_text.clone(), action_text);
             *old_key.borrow_mut() = key_text;
         }
     };
@@ -1863,11 +1920,15 @@ fn add_keybinding_row(
     action_entry.connect_changed(move |_| update_clone2());
 
     row.append(&key_entry);
+    row.append(&record_button);
     row.append(&action_entry);
     row.append(&remove_button);
 
     container.append(&row);
 }
+
+
+    // Action entry
 
 fn get_config_path() -> PathBuf {
     let config_home = std::env::var("XDG_CONFIG_HOME")
