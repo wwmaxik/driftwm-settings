@@ -6,6 +6,7 @@ use config::*;
 use config_helpers::*;
 use ui_helpers::*;
 
+use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::{
     Adjustment, Application, ApplicationWindow, Box, Button, ComboBoxText, CssProvider, Entry,
@@ -68,7 +69,9 @@ fn build_ui(app: &Application) {
     add_snap_page(&stack, config_rc.clone());
     add_decorations_page(&stack, config_rc.clone());
     add_effects_page(&stack, config_rc.clone());
+    add_backend_page(&stack, config_rc.clone());
     add_background_page(&stack, config_rc.clone());
+    add_keybindings_page(&stack, config_rc.clone());
     add_autostart_page(&stack, config_rc.clone());
 
     // Scrolled window for stack content
@@ -1634,6 +1637,165 @@ fn add_autostart_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     page.append(&scrolled);
 
     stack.add_titled(&page, Some("autostart"), "Autostart");
+}
+
+fn add_backend_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+    let page = create_page();
+
+    add_header(&page, "Backend Configuration");
+
+    let info_label = Label::new(Some(
+        "Hardware stability quirks. Enable if you experience flickering or crashes.\nParticularly useful on NVIDIA GPUs.",
+    ));
+    info_label.set_halign(gtk4::Align::Start);
+    info_label.add_css_class("dim-label");
+    page.append(&info_label);
+
+    add_section_header(&page, "DRM Settings");
+
+    let force_legacy = add_switch_row(
+        &page,
+        "Force Legacy DRM",
+        "Use legacy DRM API instead of atomic modesetting",
+        config
+            .borrow()
+            .backend
+            .as_ref()
+            .and_then(|b| b.force_legacy_drm)
+            .unwrap_or(false),
+    );
+
+    let config_clone = config.clone();
+    force_legacy.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        if cfg.backend.is_none() {
+            cfg.backend = Some(Default::default());
+        }
+        cfg.backend.as_mut().unwrap().force_legacy_drm = Some(state);
+        glib::Propagation::Proceed
+    });
+
+    let wait_frame = add_switch_row(
+        &page,
+        "Wait for Frame Completion",
+        "Wait for GPU fences before page flip",
+        config
+            .borrow()
+            .backend
+            .as_ref()
+            .and_then(|b| b.wait_for_frame_completion)
+            .unwrap_or(false),
+    );
+
+    let config_clone = config.clone();
+    wait_frame.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        if cfg.backend.is_none() {
+            cfg.backend = Some(Default::default());
+        }
+        cfg.backend.as_mut().unwrap().wait_for_frame_completion = Some(state);
+        glib::Propagation::Proceed
+    });
+
+    let disable_scanout = add_switch_row(
+        &page,
+        "Disable Direct Scanout",
+        "Force EGL composition (disable direct scanout)",
+        config
+            .borrow()
+            .backend
+            .as_ref()
+            .and_then(|b| b.disable_direct_scanout)
+            .unwrap_or(false),
+    );
+
+    let config_clone = config.clone();
+    disable_scanout.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        if cfg.backend.is_none() {
+            cfg.backend = Some(Default::default());
+        }
+        cfg.backend.as_mut().unwrap().disable_direct_scanout = Some(state);
+        glib::Propagation::Proceed
+    });
+
+    stack.add_titled(&page, Some("backend"), "Backend");
+}
+
+fn add_keybindings_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+    let page = create_page();
+
+    add_header(&page, "Keybindings");
+
+    let info_label = Label::new(Some(
+        "Custom keybindings in format: \"Modifier+Key\" = \"action\"\nExample: \"super+t\" = \"exec alacritty\"",
+    ));
+    info_label.set_halign(gtk4::Align::Start);
+    info_label.add_css_class("dim-label");
+    page.append(&info_label);
+
+    // Text view for keybindings
+    let scrolled = ScrolledWindow::new();
+    scrolled.set_vexpand(true);
+    scrolled.set_min_content_height(400);
+
+    let text_view = TextView::new();
+    text_view.set_monospace(true);
+    text_view.set_left_margin(6);
+    text_view.set_right_margin(6);
+    text_view.set_top_margin(6);
+    text_view.set_bottom_margin(6);
+
+    let buffer = text_view.buffer();
+
+    // Load existing keybindings
+    let keybindings_text = config
+        .borrow()
+        .keybindings
+        .as_ref()
+        .map(|kb| {
+            kb.iter()
+                .map(|(k, v)| format!("\"{}\" = \"{}\"", k, v))
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
+        .unwrap_or_default();
+    buffer.set_text(&keybindings_text);
+
+    let config_clone = config.clone();
+    buffer.connect_changed(move |buf| {
+        let start = buf.start_iter();
+        let end = buf.end_iter();
+        let text = buf.text(&start, &end, false);
+
+        let mut keybindings = std::collections::HashMap::new();
+        for line in text.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            // Parse "key" = "value"
+            if let Some((key, value)) = line.split_once('=') {
+                let key = key.trim().trim_matches('"').trim();
+                let value = value.trim().trim_matches('"').trim();
+                if !key.is_empty() && !value.is_empty() {
+                    keybindings.insert(key.to_string(), value.to_string());
+                }
+            }
+        }
+
+        let mut cfg = config_clone.borrow_mut();
+        cfg.keybindings = if keybindings.is_empty() {
+            None
+        } else {
+            Some(keybindings)
+        };
+    });
+
+    scrolled.set_child(Some(&text_view));
+    page.append(&scrolled);
+
+    stack.add_titled(&page, Some("keybindings"), "Keybindings");
 }
 
 fn get_config_path() -> PathBuf {
