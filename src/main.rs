@@ -1728,74 +1728,145 @@ fn add_keybindings_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     add_header(&page, "Keybindings");
 
     let info_label = Label::new(Some(
-        "Custom keybindings in format: \"Modifier+Key\" = \"action\"\nExample: \"super+t\" = \"exec alacritty\"",
+        "Configure custom keyboard shortcuts. Click + to add new bindings.",
     ));
     info_label.set_halign(gtk4::Align::Start);
     info_label.add_css_class("dim-label");
     page.append(&info_label);
 
-    // Text view for keybindings
+    // Scrolled window for keybindings list
     let scrolled = ScrolledWindow::new();
     scrolled.set_vexpand(true);
     scrolled.set_min_content_height(400);
 
-    let text_view = TextView::new();
-    text_view.set_monospace(true);
-    text_view.set_left_margin(6);
-    text_view.set_right_margin(6);
-    text_view.set_top_margin(6);
-    text_view.set_bottom_margin(6);
-
-    let buffer = text_view.buffer();
+    let bindings_box = Box::new(Orientation::Vertical, 6);
+    scrolled.set_child(Some(&bindings_box));
 
     // Load existing keybindings
-    let keybindings_text = config
-        .borrow()
-        .keybindings
-        .as_ref()
-        .map(|kb| {
-            kb.iter()
-                .map(|(k, v)| format!("\"{}\" = \"{}\"", k, v))
-                .collect::<Vec<_>>()
-                .join("\n")
-        })
-        .unwrap_or_default();
-    buffer.set_text(&keybindings_text);
+    let existing_bindings = config.borrow().keybindings.clone().unwrap_or_default();
 
+    for (key, action) in existing_bindings.iter() {
+        add_keybinding_row(
+            &bindings_box,
+            config.clone(),
+            Some(key.clone()),
+            Some(action.clone()),
+        );
+    }
+
+    page.append(&scrolled);
+
+    // Add button
+    let add_button = Button::with_label("+ Add Keybinding");
+    add_button.set_halign(gtk4::Align::Start);
+    add_button.add_css_class("suggested-action");
+
+    let bindings_box_clone = bindings_box.clone();
     let config_clone = config.clone();
-    buffer.connect_changed(move |buf| {
-        let start = buf.start_iter();
-        let end = buf.end_iter();
-        let text = buf.text(&start, &end, false);
+    add_button.connect_clicked(move |_| {
+        add_keybinding_row(&bindings_box_clone, config_clone.clone(), None, None);
+    });
 
-        let mut keybindings = std::collections::HashMap::new();
-        for line in text.lines() {
-            let line = line.trim();
-            if line.is_empty() || line.starts_with('#') {
-                continue;
-            }
-            // Parse "key" = "value"
-            if let Some((key, value)) = line.split_once('=') {
-                let key = key.trim().trim_matches('"').trim();
-                let value = value.trim().trim_matches('"').trim();
-                if !key.is_empty() && !value.is_empty() {
-                    keybindings.insert(key.to_string(), value.to_string());
+    page.append(&add_button);
+
+    stack.add_titled(&page, Some("keybindings"), "Keybindings");
+}
+
+fn add_keybinding_row(
+    container: &Box,
+    config: Rc<RefCell<DriftwmConfig>>,
+    initial_key: Option<String>,
+    initial_action: Option<String>,
+) {
+    let row = Box::new(Orientation::Horizontal, 12);
+    row.set_margin_top(6);
+    row.set_margin_bottom(6);
+
+    // Key entry
+    let key_entry = Entry::new();
+    key_entry.set_placeholder_text(Some("super+t"));
+    key_entry.set_width_chars(20);
+    if let Some(key) = initial_key.clone() {
+        key_entry.set_text(&key);
+    }
+
+    // Action entry
+    let action_entry = Entry::new();
+    action_entry.set_placeholder_text(Some("exec alacritty"));
+    action_entry.set_hexpand(true);
+    if let Some(action) = initial_action.clone() {
+        action_entry.set_text(&action);
+    }
+
+    // Remove button
+    let remove_button = Button::with_label("−");
+    remove_button.add_css_class("destructive-action");
+
+    let row_clone = row.clone();
+    let config_clone = config.clone();
+    let key_entry_clone = key_entry.clone();
+    remove_button.connect_clicked(move |_| {
+        // Remove from config
+        let key_text = key_entry_clone.text().to_string();
+        if !key_text.is_empty() {
+            let mut cfg = config_clone.borrow_mut();
+            if let Some(ref mut kb) = cfg.keybindings {
+                kb.remove(&key_text);
+                if kb.is_empty() {
+                    cfg.keybindings = None;
                 }
             }
         }
-
-        let mut cfg = config_clone.borrow_mut();
-        cfg.keybindings = if keybindings.is_empty() {
-            None
-        } else {
-            Some(keybindings)
-        };
+        // Remove from UI
+        if let Some(parent) = row_clone.parent() {
+            parent.downcast::<Box>().unwrap().remove(&row_clone);
+        }
     });
 
-    scrolled.set_child(Some(&text_view));
-    page.append(&scrolled);
+    // Update config when entries change
+    let config_clone = config.clone();
+    let key_entry_clone = key_entry.clone();
+    let action_entry_clone = action_entry.clone();
+    let old_key = Rc::new(RefCell::new(initial_key.unwrap_or_default()));
 
-    stack.add_titled(&page, Some("keybindings"), "Keybindings");
+    let update_binding = move || {
+        let key_text = key_entry_clone.text().to_string().trim().to_string();
+        let action_text = action_entry_clone.text().to_string().trim().to_string();
+
+        let mut cfg = config_clone.borrow_mut();
+
+        // Remove old key if it changed
+        let old_key_val = old_key.borrow().clone();
+        if !old_key_val.is_empty() && old_key_val != key_text {
+            if let Some(ref mut kb) = cfg.keybindings {
+                kb.remove(&old_key_val);
+            }
+        }
+
+        // Add/update new binding
+        if !key_text.is_empty() && !action_text.is_empty() {
+            if cfg.keybindings.is_none() {
+                cfg.keybindings = Some(std::collections::HashMap::new());
+            }
+            cfg.keybindings
+                .as_mut()
+                .unwrap()
+                .insert(key_text.clone(), action_text);
+            *old_key.borrow_mut() = key_text;
+        }
+    };
+
+    let update_clone = Rc::new(update_binding);
+    let update_clone2 = update_clone.clone();
+
+    key_entry.connect_changed(move |_| update_clone());
+    action_entry.connect_changed(move |_| update_clone2());
+
+    row.append(&key_entry);
+    row.append(&action_entry);
+    row.append(&remove_button);
+
+    container.append(&row);
 }
 
 fn get_config_path() -> PathBuf {
