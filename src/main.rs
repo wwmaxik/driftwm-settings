@@ -2153,35 +2153,31 @@ fn add_backend_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     add_header(&page, "Backend Configuration");
 
     let info_label = Label::new(Some(
-        "Hardware stability quirks. Enable if you experience flickering or crashes.\nParticularly useful on NVIDIA GPUs.",
+        "Hardware stability quirks. All default to false (opt-in).\nEnable these if you experience flickering, crashes, or rendering issues.\nParticularly useful on NVIDIA GPUs with proprietary drivers.",
     ));
     info_label.set_halign(gtk4::Align::Start);
     info_label.add_css_class("dim-label");
     page.append(&info_label);
 
-    add_section_header(&page, "DRM Settings");
+    let info_label2 = Label::new(Some(
+        "Note: These flags must be set before launching driftwm. Changing them requires a restart.",
+    ));
+    info_label2.set_halign(gtk4::Align::Start);
+    info_label2.add_css_class("dim-label");
+    info_label2.add_css_class("caption");
+    page.append(&info_label2);
 
-    let force_legacy = add_switch_row(
-        &page,
-        "Force Legacy DRM",
-        "Use legacy DRM API instead of atomic modesetting",
-        config
-            .borrow()
-            .backend
-            .as_ref()
-            .and_then(|b| b.force_legacy_drm)
-            .unwrap_or(false),
-    );
+    add_section_header(&page, "Environment Variables");
 
-    let config_clone = config.clone();
-    force_legacy.connect_state_set(move |_, state| {
-        let mut cfg = config_clone.borrow_mut();
-        if cfg.backend.is_none() {
-            cfg.backend = Some(Default::default());
-        }
-        cfg.backend.as_mut().unwrap().force_legacy_drm = Some(state);
-        glib::Propagation::Proceed
-    });
+    let env_info = Label::new(Some(
+        "For additional NVIDIA-specific settings, set these environment variables\nin your session wrapper script or shell profile before starting driftwm:\n\n  export SMITHAY_USE_LEGACY=1          # Use legacy DRM API instead of atomic modesetting\n  export __GL_GSYNC_ALLOWED=0\n  export __GL_VRR_ALLOWED=0\n  export __GL_MaxFramesAllowed=1\n  export NVD_BACKEND=direct",
+    ));
+    env_info.set_halign(gtk4::Align::Start);
+    env_info.add_css_class("dim-label");
+    env_info.set_selectable(true);
+    page.append(&env_info);
+
+    add_section_header(&page, "Backend Settings");
 
     let wait_frame = add_switch_row(
         &page,
