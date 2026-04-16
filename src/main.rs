@@ -1538,7 +1538,9 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     page.append(&radius_box);
 
     // Blur radius description
-    let radius_desc = Label::new(Some("Controls blur intensity through multiple passes (0 = disabled, 2 = default, 10+ = very strong)"));
+    let radius_desc = Label::new(Some(
+        "Controls blur intensity through multiple passes (0 = disabled, 2 = default, 10+ = very strong)",
+    ));
     radius_desc.set_halign(gtk4::Align::Start);
     radius_desc.set_margin_start(200);
     radius_desc.add_css_class("dim-label");
