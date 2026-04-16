@@ -1834,11 +1834,10 @@ fn add_window_rule_row(
     let frame_clone = rule_frame.clone();
     delete_btn.connect_clicked(move |_| {
         let mut cfg = config_clone.borrow_mut();
-        if let Some(rules) = cfg.window_rules.as_mut() {
-            if idx < rules.len() {
+        if let Some(rules) = cfg.window_rules.as_mut()
+            && idx < rules.len() {
                 rules.remove(idx);
             }
-        }
         drop(cfg);
         frame_clone.set_visible(false);
     });
@@ -1855,12 +1854,11 @@ fn add_window_rule_row(
     let config_clone = config.clone();
     app_id_entry.connect_changed(move |entry| {
         let mut cfg = config_clone.borrow_mut();
-        if let Some(rules) = cfg.window_rules.as_mut() {
-            if let Some(rule) = rules.get_mut(idx) {
+        if let Some(rules) = cfg.window_rules.as_mut()
+            && let Some(rule) = rules.get_mut(idx) {
                 let text = entry.text().to_string();
                 rule.app_id = if text.is_empty() { None } else { Some(text) };
             }
-        }
     });
     app_id_box.append(&app_id_entry);
     rule_box.append(&app_id_box);
@@ -1875,12 +1873,11 @@ fn add_window_rule_row(
     let config_clone = config.clone();
     title_entry.connect_changed(move |entry| {
         let mut cfg = config_clone.borrow_mut();
-        if let Some(rules) = cfg.window_rules.as_mut() {
-            if let Some(rule) = rules.get_mut(idx) {
+        if let Some(rules) = cfg.window_rules.as_mut()
+            && let Some(rule) = rules.get_mut(idx) {
                 let text = entry.text().to_string();
                 rule.title = if text.is_empty() { None } else { Some(text) };
             }
-        }
     });
     title_box.append(&title_entry);
     rule_box.append(&title_box);
@@ -1893,11 +1890,10 @@ fn add_window_rule_row(
     let config_clone = config.clone();
     blur_switch.connect_state_set(move |_, state| {
         let mut cfg = config_clone.borrow_mut();
-        if let Some(rules) = cfg.window_rules.as_mut() {
-            if let Some(rule) = rules.get_mut(idx) {
+        if let Some(rules) = cfg.window_rules.as_mut()
+            && let Some(rule) = rules.get_mut(idx) {
                 rule.blur = Some(state);
             }
-        }
         gtk4::glib::Propagation::Proceed
     });
     blur_box.append(&blur_switch);
@@ -1915,11 +1911,10 @@ fn add_window_rule_row(
     let config_clone = config.clone();
     opacity_spin.connect_value_changed(move |spin| {
         let mut cfg = config_clone.borrow_mut();
-        if let Some(rules) = cfg.window_rules.as_mut() {
-            if let Some(rule) = rules.get_mut(idx) {
+        if let Some(rules) = cfg.window_rules.as_mut()
+            && let Some(rule) = rules.get_mut(idx) {
                 rule.opacity = Some(spin.value());
             }
-        }
     });
     opacity_box.append(&opacity_spin);
     rule_box.append(&opacity_box);
@@ -1938,11 +1933,10 @@ fn add_window_rule_row(
     decoration_combo.connect_changed(move |combo| {
         if let Some(id) = combo.active_id() {
             let mut cfg = config_clone.borrow_mut();
-            if let Some(rules) = cfg.window_rules.as_mut() {
-                if let Some(rule) = rules.get_mut(idx) {
+            if let Some(rules) = cfg.window_rules.as_mut()
+                && let Some(rule) = rules.get_mut(idx) {
                     rule.decoration = Some(id.to_string());
                 }
-            }
         }
     });
     decoration_box.append(&decoration_combo);
@@ -1956,11 +1950,10 @@ fn add_window_rule_row(
     let config_clone = config.clone();
     widget_switch.connect_state_set(move |_, state| {
         let mut cfg = config_clone.borrow_mut();
-        if let Some(rules) = cfg.window_rules.as_mut() {
-            if let Some(rule) = rules.get_mut(idx) {
+        if let Some(rules) = cfg.window_rules.as_mut()
+            && let Some(rule) = rules.get_mut(idx) {
                 rule.widget = Some(state);
             }
-        }
         gtk4::glib::Propagation::Proceed
     });
     widget_box.append(&widget_switch);
@@ -2298,11 +2291,10 @@ fn add_keybinding_row(
 
         // Remove old key if it changed
         let old_key_val = old_key.borrow().clone();
-        if !old_key_val.is_empty() && old_key_val != key_text {
-            if let Some(ref mut kb) = cfg.keybindings {
+        if !old_key_val.is_empty() && old_key_val != key_text
+            && let Some(ref mut kb) = cfg.keybindings {
                 kb.remove(&old_key_val);
             }
-        }
 
         // Add/update new binding
         if !key_text.is_empty() && !action_text.is_empty() {

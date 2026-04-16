@@ -9,6 +9,44 @@ use std::rc::Rc;
 use crate::config::*;
 use crate::ui_helpers::*;
 
+struct ShaderParams {
+    template: ComboBoxText,
+    color1_r: SpinButton,
+    color1_g: SpinButton,
+    color1_b: SpinButton,
+    color2_r: SpinButton,
+    color2_g: SpinButton,
+    color2_b: SpinButton,
+    speed: SpinButton,
+    scale: SpinButton,
+    complexity: SpinButton,
+    vignette: Switch,
+    glow: SpinButton,
+}
+
+impl ShaderParams {
+    fn generate_shader(&self) -> String {
+        generate_shader_from_params(
+            self.template
+                .active_id()
+                .as_ref()
+                .map(|s| s.as_str())
+                .unwrap_or("gradient"),
+            self.color1_r.value(),
+            self.color1_g.value(),
+            self.color1_b.value(),
+            self.color2_r.value(),
+            self.color2_g.value(),
+            self.color2_b.value(),
+            self.speed.value(),
+            self.scale.value(),
+            self.complexity.value() as i32,
+            self.vignette.is_active(),
+            self.glow.value(),
+        )
+    }
+}
+
 pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     let page = create_page();
 
@@ -192,6 +230,22 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>)
     page.append(&visual_container);
     page.append(&raw_container);
 
+    // Create params struct
+    let params = Rc::new(ShaderParams {
+        template: template_combo.clone(),
+        color1_r: color1_r.clone(),
+        color1_g: color1_g.clone(),
+        color1_b: color1_b.clone(),
+        color2_r: color2_r.clone(),
+        color2_g: color2_g.clone(),
+        color2_b: color2_b.clone(),
+        speed: speed_spin.clone(),
+        scale: scale_spin.clone(),
+        complexity: complexity_spin.clone(),
+        vignette: vignette_switch.clone(),
+        glow: glow_spin.clone(),
+    });
+
     // Mode switching
     setup_mode_switching(
         &visual_mode_btn,
@@ -199,42 +253,14 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>)
         &visual_container,
         &raw_container,
         &buffer,
-        &template_combo,
-        &color1_r,
-        &color1_g,
-        &color1_b,
-        &color2_r,
-        &color2_g,
-        &color2_b,
-        &speed_spin,
-        &scale_spin,
-        &complexity_spin,
-        &vignette_switch,
-        &glow_spin,
+        &params,
     );
 
     // Button bar
     let button_box = Box::new(Orientation::Horizontal, 12);
     button_box.set_margin_top(12);
 
-    setup_buttons(
-        &button_box,
-        &config,
-        &visual_container,
-        &buffer,
-        &template_combo,
-        &color1_r,
-        &color1_g,
-        &color1_b,
-        &color2_r,
-        &color2_g,
-        &color2_b,
-        &speed_spin,
-        &scale_spin,
-        &complexity_spin,
-        &vignette_switch,
-        &glow_spin,
-    );
+    setup_buttons(&button_box, &config, &visual_container, &buffer, &params);
 
     page.append(&button_box);
 
@@ -247,18 +273,7 @@ fn setup_mode_switching(
     visual_container: &Box,
     raw_container: &Box,
     buffer: &gtk4::TextBuffer,
-    template: &ComboBoxText,
-    c1_r: &SpinButton,
-    c1_g: &SpinButton,
-    c1_b: &SpinButton,
-    c2_r: &SpinButton,
-    c2_g: &SpinButton,
-    c2_b: &SpinButton,
-    speed: &SpinButton,
-    scale: &SpinButton,
-    complexity: &SpinButton,
-    vignette: &Switch,
-    glow: &SpinButton,
+    params: &Rc<ShaderParams>,
 ) {
     // Visual mode button
     let visual_clone = visual_container.clone();
@@ -278,39 +293,10 @@ fn setup_mode_switching(
     let visual_btn_clone = visual_btn.clone();
     let raw_btn_clone = raw_btn.clone();
     let buffer_clone = buffer.clone();
-    let template_clone = template.clone();
-    let c1_r_clone = c1_r.clone();
-    let c1_g_clone = c1_g.clone();
-    let c1_b_clone = c1_b.clone();
-    let c2_r_clone = c2_r.clone();
-    let c2_g_clone = c2_g.clone();
-    let c2_b_clone = c2_b.clone();
-    let speed_clone = speed.clone();
-    let scale_clone = scale.clone();
-    let complexity_clone = complexity.clone();
-    let vignette_clone = vignette.clone();
-    let glow_clone = glow.clone();
+    let params_clone = params.clone();
 
     raw_btn.connect_clicked(move |_| {
-        // Generate shader from visual parameters
-        let shader_code = generate_shader_from_params(
-            template_clone
-                .active_id()
-                .as_ref()
-                .map(|s| s.as_str())
-                .unwrap_or("gradient"),
-            c1_r_clone.value(),
-            c1_g_clone.value(),
-            c1_b_clone.value(),
-            c2_r_clone.value(),
-            c2_g_clone.value(),
-            c2_b_clone.value(),
-            speed_clone.value(),
-            scale_clone.value(),
-            complexity_clone.value() as i32,
-            vignette_clone.is_active(),
-            glow_clone.value(),
-        );
+        let shader_code = params_clone.generate_shader();
         buffer_clone.set_text(&shader_code);
 
         visual_clone.set_visible(false);
@@ -325,58 +311,19 @@ fn setup_buttons(
     config: &Rc<RefCell<DriftwmConfig>>,
     visual_container: &Box,
     buffer: &gtk4::TextBuffer,
-    template: &ComboBoxText,
-    c1_r: &SpinButton,
-    c1_g: &SpinButton,
-    c1_b: &SpinButton,
-    c2_r: &SpinButton,
-    c2_g: &SpinButton,
-    c2_b: &SpinButton,
-    speed: &SpinButton,
-    scale: &SpinButton,
-    complexity: &SpinButton,
-    vignette: &Switch,
-    glow: &SpinButton,
+    params: &Rc<ShaderParams>,
 ) {
     // Generate & Save button
     let save_shader_btn = Button::with_label("Generate & Save Shader");
     save_shader_btn.add_css_class("suggested-action");
 
     let buffer_clone = buffer.clone();
-    let template_clone = template.clone();
-    let c1_r_clone = c1_r.clone();
-    let c1_g_clone = c1_g.clone();
-    let c1_b_clone = c1_b.clone();
-    let c2_r_clone = c2_r.clone();
-    let c2_g_clone = c2_g.clone();
-    let c2_b_clone = c2_b.clone();
-    let speed_clone = speed.clone();
-    let scale_clone = scale.clone();
-    let complexity_clone = complexity.clone();
-    let vignette_clone = vignette.clone();
-    let glow_clone = glow.clone();
+    let params_clone = params.clone();
     let visual_clone = visual_container.clone();
 
     save_shader_btn.connect_clicked(move |btn| {
         let shader_code = if visual_clone.is_visible() {
-            generate_shader_from_params(
-                template_clone
-                    .active_id()
-                    .as_ref()
-                    .map(|s| s.as_str())
-                    .unwrap_or("gradient"),
-                c1_r_clone.value(),
-                c1_g_clone.value(),
-                c1_b_clone.value(),
-                c2_r_clone.value(),
-                c2_g_clone.value(),
-                c2_b_clone.value(),
-                speed_clone.value(),
-                scale_clone.value(),
-                complexity_clone.value() as i32,
-                vignette_clone.is_active(),
-                glow_clone.value(),
-            )
+            params_clone.generate_shader()
         } else {
             let start = buffer_clone.start_iter();
             let end = buffer_clone.end_iter();
@@ -441,6 +388,7 @@ fn setup_buttons(
     button_box.append(&apply_shader_btn);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn generate_shader_from_params(
     template: &str,
     c1_r: f64,
