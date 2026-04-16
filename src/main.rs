@@ -1,9 +1,11 @@
 mod config;
 mod config_helpers;
+mod shader_editor;
 mod ui_helpers;
 
 use config::*;
 use config_helpers::*;
+use shader_editor::add_shader_editor_page;
 use ui_helpers::*;
 
 use gtk4::glib;
@@ -69,8 +71,10 @@ fn build_ui(app: &Application) {
     add_snap_page(&stack, config_rc.clone());
     add_decorations_page(&stack, config_rc.clone());
     add_effects_page(&stack, config_rc.clone());
+    add_window_rules_page(&stack, config_rc.clone());
     add_backend_page(&stack, config_rc.clone());
     add_background_page(&stack, config_rc.clone());
+    add_shader_editor_page(&stack, config_rc.clone());
     add_keybindings_page(&stack, config_rc.clone());
     add_autostart_page(&stack, config_rc.clone());
 
@@ -104,9 +108,40 @@ fn build_ui(app: &Application) {
 
     let config_clone = config_rc.clone();
     let path_clone = config_path.clone();
-    save_button.connect_clicked(move |_| match config_clone.borrow().save(&path_clone) {
-        Ok(_) => println!("✓ Configuration saved to {}", path_clone.display()),
-        Err(e) => eprintln!("✗ Failed to save config: {}", e),
+    let button_clone = save_button.clone();
+    save_button.connect_clicked(move |btn| {
+        match config_clone.borrow().save(&path_clone) {
+            Ok(_) => {
+                println!("✓ Configuration saved to {}", path_clone.display());
+                btn.set_label("✓ Saved!");
+                btn.remove_css_class("suggested-action");
+                btn.add_css_class("success");
+
+                // Reset button after 2 seconds
+                let btn_clone = button_clone.clone();
+                glib::timeout_add_seconds_local(2, move || {
+                    btn_clone.set_label("Save");
+                    btn_clone.remove_css_class("success");
+                    btn_clone.add_css_class("suggested-action");
+                    glib::ControlFlow::Break
+                });
+            }
+            Err(e) => {
+                eprintln!("✗ Failed to save config: {}", e);
+                btn.set_label("✗ Error!");
+                btn.remove_css_class("suggested-action");
+                btn.add_css_class("destructive-action");
+
+                // Reset button after 2 seconds
+                let btn_clone = button_clone.clone();
+                glib::timeout_add_seconds_local(2, move || {
+                    btn_clone.set_label("Save");
+                    btn_clone.remove_css_class("destructive-action");
+                    btn_clone.add_css_class("suggested-action");
+                    glib::ControlFlow::Break
+                });
+            }
+        }
     });
 
     statusbar.append(&save_button);
@@ -120,8 +155,8 @@ fn build_ui(app: &Application) {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("driftwm Settings")
-        .default_width(850)
-        .default_height(650)
+        .default_width(1000)
+        .default_height(700)
         .child(&vbox)
         .build();
 
@@ -1460,11 +1495,21 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     add_header(&page, "Visual Effects");
 
+    // Info section
+    let info_label = Label::new(Some(
+        "Blur effects are applied to windows with blur enabled in window rules.\nHigher values increase blur quality but may impact performance.",
+    ));
+    info_label.set_halign(gtk4::Align::Start);
+    info_label.add_css_class("dim-label");
+    page.append(&info_label);
+
+    add_section_header(&page, "Blur Settings");
+
     // Blur radius
     let radius_box = create_row();
-    add_label(&radius_box, "Blur radius:", 200);
+    add_label(&radius_box, "Blur radius (passes):", 200);
     let radius_spin = SpinButton::new(
-        Some(&Adjustment::new(2.0, 0.0, 10.0, 1.0, 2.0, 0.0)),
+        Some(&Adjustment::new(2.0, 0.0, 20.0, 1.0, 2.0, 0.0)),
         1.0,
         0,
     );
@@ -1476,6 +1521,9 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|e| e.blur_radius)
             .unwrap_or(2) as f64,
     );
+    radius_spin.set_tooltip_text(Some(
+        "Number of Kawase down+up passes. Default: 2. Higher = more blur, lower performance.",
+    ));
 
     let config_clone = config.clone();
     radius_spin.connect_value_changed(move |spin| {
@@ -1489,11 +1537,19 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     radius_box.append(&radius_spin);
     page.append(&radius_box);
 
+    // Blur radius description
+    let radius_desc = Label::new(Some("Controls blur intensity through multiple passes (0 = disabled, 2 = default, 10+ = very strong)"));
+    radius_desc.set_halign(gtk4::Align::Start);
+    radius_desc.set_margin_start(200);
+    radius_desc.add_css_class("dim-label");
+    radius_desc.add_css_class("caption");
+    page.append(&radius_desc);
+
     // Blur strength
     let strength_box = create_row();
-    add_label(&strength_box, "Blur strength:", 200);
+    add_label(&strength_box, "Blur strength (spread):", 200);
     let strength_spin =
-        SpinButton::new(Some(&Adjustment::new(1.1, 0.5, 3.0, 0.1, 0.5, 0.0)), 0.1, 1);
+        SpinButton::new(Some(&Adjustment::new(1.1, 0.1, 5.0, 0.1, 0.5, 0.0)), 0.1, 2);
     strength_spin.set_value(
         config
             .borrow()
@@ -1502,6 +1558,9 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|e| e.blur_strength)
             .unwrap_or(1.1),
     );
+    strength_spin.set_tooltip_text(Some(
+        "Per-pass texel spread. Default: 1.1. Higher = wider blur spread per pass.",
+    ));
 
     let config_clone = config.clone();
     strength_spin.connect_value_changed(move |spin| {
@@ -1514,6 +1573,93 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     strength_box.append(&strength_spin);
     page.append(&strength_box);
+
+    // Blur strength description
+    let strength_desc = Label::new(Some(
+        "Controls blur spread per pass (0.5 = tight, 1.1 = default, 3.0+ = very wide)",
+    ));
+    strength_desc.set_halign(gtk4::Align::Start);
+    strength_desc.set_margin_start(200);
+    strength_desc.add_css_class("dim-label");
+    strength_desc.add_css_class("caption");
+    page.append(&strength_desc);
+
+    // Presets section
+    add_section_header(&page, "Blur Presets");
+
+    let presets_box = Box::new(Orientation::Horizontal, 12);
+    presets_box.set_margin_top(6);
+    presets_box.set_margin_bottom(12);
+    presets_box.set_margin_start(12);
+    presets_box.set_margin_end(12);
+
+    // Preset buttons
+    let preset_none = Button::with_label("None (0, 0)");
+    let preset_light = Button::with_label("Light (1, 0.8)");
+    let preset_default = Button::with_label("Default (2, 1.1)");
+    let preset_medium = Button::with_label("Medium (4, 1.3)");
+    let preset_strong = Button::with_label("Strong (6, 1.5)");
+    let preset_extreme = Button::with_label("Extreme (10, 2.0)");
+
+    let radius_clone = radius_spin.clone();
+    let strength_clone = strength_spin.clone();
+    preset_none.connect_clicked(move |_| {
+        radius_clone.set_value(0.0);
+        strength_clone.set_value(0.0);
+    });
+
+    let radius_clone = radius_spin.clone();
+    let strength_clone = strength_spin.clone();
+    preset_light.connect_clicked(move |_| {
+        radius_clone.set_value(1.0);
+        strength_clone.set_value(0.8);
+    });
+
+    let radius_clone = radius_spin.clone();
+    let strength_clone = strength_spin.clone();
+    preset_default.connect_clicked(move |_| {
+        radius_clone.set_value(2.0);
+        strength_clone.set_value(1.1);
+    });
+
+    let radius_clone = radius_spin.clone();
+    let strength_clone = strength_spin.clone();
+    preset_medium.connect_clicked(move |_| {
+        radius_clone.set_value(4.0);
+        strength_clone.set_value(1.3);
+    });
+
+    let radius_clone = radius_spin.clone();
+    let strength_clone = strength_spin.clone();
+    preset_strong.connect_clicked(move |_| {
+        radius_clone.set_value(6.0);
+        strength_clone.set_value(1.5);
+    });
+
+    let radius_clone = radius_spin.clone();
+    let strength_clone = strength_spin.clone();
+    preset_extreme.connect_clicked(move |_| {
+        radius_clone.set_value(10.0);
+        strength_clone.set_value(2.0);
+    });
+
+    presets_box.append(&preset_none);
+    presets_box.append(&preset_light);
+    presets_box.append(&preset_default);
+    presets_box.append(&preset_medium);
+    presets_box.append(&preset_strong);
+    presets_box.append(&preset_extreme);
+    page.append(&presets_box);
+
+    // Usage note
+    let usage_label = Label::new(Some(
+        "Note: To enable blur for specific windows, add window rules with blur = true and opacity < 1.0",
+    ));
+    usage_label.set_halign(gtk4::Align::Start);
+    usage_label.set_margin_top(12);
+    usage_label.add_css_class("dim-label");
+    usage_label.add_css_class("caption");
+    page.append(&usage_label);
 
     stack.add_titled(&page, Some("effects"), "Effects");
 }
@@ -1577,7 +1723,249 @@ fn add_background_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     tile_box.append(&tile_entry);
     page.append(&tile_box);
 
+    // Quick access to Shader Editor
+    let shader_editor_box = Box::new(Orientation::Horizontal, 12);
+    shader_editor_box.set_margin_top(24);
+
+    let shader_editor_btn = Button::with_label("Open Shader Editor →");
+    shader_editor_btn.add_css_class("suggested-action");
+    shader_editor_btn.set_tooltip_text(Some(
+        "Create custom animated backgrounds with visual controls",
+    ));
+
+    let stack_clone = stack.clone();
+    shader_editor_btn.connect_clicked(move |_| {
+        stack_clone.set_visible_child_name("shader_editor");
+    });
+
+    shader_editor_box.append(&shader_editor_btn);
+    page.append(&shader_editor_box);
+
     stack.add_titled(&page, Some("background"), "Background");
+}
+
+fn add_window_rules_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+    let page = create_page();
+
+    add_header(&page, "Window Rules");
+
+    let info_label = Label::new(Some(
+        "Configure per-window settings like blur, opacity, position, and decorations.\nFind app_id: cat $XDG_RUNTIME_DIR/driftwm/state",
+    ));
+    info_label.set_halign(gtk4::Align::Start);
+    info_label.add_css_class("dim-label");
+    page.append(&info_label);
+
+    // Scrolled window for rules list
+    let scrolled = ScrolledWindow::new();
+    scrolled.set_vexpand(true);
+    scrolled.set_min_content_height(400);
+
+    let rules_container = Box::new(Orientation::Vertical, 12);
+    rules_container.set_margin_top(12);
+    rules_container.set_margin_bottom(12);
+    rules_container.set_margin_start(12);
+    rules_container.set_margin_end(12);
+
+    scrolled.set_child(Some(&rules_container));
+
+    // Load existing rules
+    let existing_rules = config.borrow().window_rules.clone().unwrap_or_default();
+
+    for (idx, rule) in existing_rules.iter().enumerate() {
+        add_window_rule_row(&rules_container, config.clone(), idx, rule.clone());
+    }
+
+    page.append(&scrolled);
+
+    // Add button
+    let add_button = Button::with_label("+ Add Window Rule");
+    add_button.set_halign(gtk4::Align::Start);
+    add_button.add_css_class("suggested-action");
+
+    let rules_container_clone = rules_container.clone();
+    let config_clone = config.clone();
+    add_button.connect_clicked(move |_| {
+        let mut cfg = config_clone.borrow_mut();
+        if cfg.window_rules.is_none() {
+            cfg.window_rules = Some(Vec::new());
+        }
+        let new_rule = WindowRule::default();
+        cfg.window_rules.as_mut().unwrap().push(new_rule.clone());
+        let idx = cfg.window_rules.as_ref().unwrap().len() - 1;
+        drop(cfg);
+
+        add_window_rule_row(&rules_container_clone, config_clone.clone(), idx, new_rule);
+    });
+
+    page.append(&add_button);
+
+    stack.add_titled(&page, Some("window_rules"), "Window Rules");
+}
+
+fn add_window_rule_row(
+    container: &Box,
+    config: Rc<RefCell<DriftwmConfig>>,
+    idx: usize,
+    rule: WindowRule,
+) {
+    let rule_frame = gtk4::Frame::new(None);
+    rule_frame.add_css_class("card");
+
+    let rule_box = Box::new(Orientation::Vertical, 6);
+    rule_box.set_margin_top(12);
+    rule_box.set_margin_bottom(12);
+    rule_box.set_margin_start(12);
+    rule_box.set_margin_end(12);
+
+    // Header with delete button
+    let header_box = Box::new(Orientation::Horizontal, 12);
+    let rule_label = Label::new(Some(&format!("Rule #{}", idx + 1)));
+    rule_label.add_css_class("heading");
+    rule_label.set_halign(gtk4::Align::Start);
+    rule_label.set_hexpand(true);
+    header_box.append(&rule_label);
+
+    let delete_btn = Button::with_label("Delete");
+    delete_btn.add_css_class("destructive-action");
+    let config_clone = config.clone();
+    let frame_clone = rule_frame.clone();
+    delete_btn.connect_clicked(move |_| {
+        let mut cfg = config_clone.borrow_mut();
+        if let Some(rules) = cfg.window_rules.as_mut() {
+            if idx < rules.len() {
+                rules.remove(idx);
+            }
+        }
+        drop(cfg);
+        frame_clone.set_visible(false);
+    });
+    header_box.append(&delete_btn);
+    rule_box.append(&header_box);
+
+    // App ID
+    let app_id_box = create_row();
+    add_label(&app_id_box, "App ID:", 150);
+    let app_id_entry = Entry::new();
+    app_id_entry.set_text(&rule.app_id.clone().unwrap_or_default());
+    app_id_entry.set_placeholder_text(Some("e.g., Alacritty, firefox"));
+    app_id_entry.set_hexpand(true);
+    let config_clone = config.clone();
+    app_id_entry.connect_changed(move |entry| {
+        let mut cfg = config_clone.borrow_mut();
+        if let Some(rules) = cfg.window_rules.as_mut() {
+            if let Some(rule) = rules.get_mut(idx) {
+                let text = entry.text().to_string();
+                rule.app_id = if text.is_empty() { None } else { Some(text) };
+            }
+        }
+    });
+    app_id_box.append(&app_id_entry);
+    rule_box.append(&app_id_box);
+
+    // Title
+    let title_box = create_row();
+    add_label(&title_box, "Title:", 150);
+    let title_entry = Entry::new();
+    title_entry.set_text(&rule.title.clone().unwrap_or_default());
+    title_entry.set_placeholder_text(Some("Window title (supports * glob)"));
+    title_entry.set_hexpand(true);
+    let config_clone = config.clone();
+    title_entry.connect_changed(move |entry| {
+        let mut cfg = config_clone.borrow_mut();
+        if let Some(rules) = cfg.window_rules.as_mut() {
+            if let Some(rule) = rules.get_mut(idx) {
+                let text = entry.text().to_string();
+                rule.title = if text.is_empty() { None } else { Some(text) };
+            }
+        }
+    });
+    title_box.append(&title_entry);
+    rule_box.append(&title_box);
+
+    // Blur
+    let blur_box = create_row();
+    add_label(&blur_box, "Enable blur:", 150);
+    let blur_switch = Switch::new();
+    blur_switch.set_active(rule.blur.unwrap_or(false));
+    let config_clone = config.clone();
+    blur_switch.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        if let Some(rules) = cfg.window_rules.as_mut() {
+            if let Some(rule) = rules.get_mut(idx) {
+                rule.blur = Some(state);
+            }
+        }
+        gtk4::glib::Propagation::Proceed
+    });
+    blur_box.append(&blur_switch);
+    rule_box.append(&blur_box);
+
+    // Opacity
+    let opacity_box = create_row();
+    add_label(&opacity_box, "Opacity:", 150);
+    let opacity_spin = SpinButton::new(
+        Some(&Adjustment::new(1.0, 0.0, 1.0, 0.05, 0.1, 0.0)),
+        0.05,
+        2,
+    );
+    opacity_spin.set_value(rule.opacity.unwrap_or(1.0));
+    let config_clone = config.clone();
+    opacity_spin.connect_value_changed(move |spin| {
+        let mut cfg = config_clone.borrow_mut();
+        if let Some(rules) = cfg.window_rules.as_mut() {
+            if let Some(rule) = rules.get_mut(idx) {
+                rule.opacity = Some(spin.value());
+            }
+        }
+    });
+    opacity_box.append(&opacity_spin);
+    rule_box.append(&opacity_box);
+
+    // Decoration
+    let decoration_box = create_row();
+    add_label(&decoration_box, "Decoration:", 150);
+    let decoration_combo = ComboBoxText::new();
+    decoration_combo.append(Some("client"), "Client");
+    decoration_combo.append(Some("server"), "Server");
+    decoration_combo.append(Some("none"), "None (Borderless)");
+    if let Some(dec) = &rule.decoration {
+        decoration_combo.set_active_id(Some(dec));
+    }
+    let config_clone = config.clone();
+    decoration_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let mut cfg = config_clone.borrow_mut();
+            if let Some(rules) = cfg.window_rules.as_mut() {
+                if let Some(rule) = rules.get_mut(idx) {
+                    rule.decoration = Some(id.to_string());
+                }
+            }
+        }
+    });
+    decoration_box.append(&decoration_combo);
+    rule_box.append(&decoration_box);
+
+    // Widget
+    let widget_box = create_row();
+    add_label(&widget_box, "Widget (pinned):", 150);
+    let widget_switch = Switch::new();
+    widget_switch.set_active(rule.widget.unwrap_or(false));
+    let config_clone = config.clone();
+    widget_switch.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        if let Some(rules) = cfg.window_rules.as_mut() {
+            if let Some(rule) = rules.get_mut(idx) {
+                rule.widget = Some(state);
+            }
+        }
+        gtk4::glib::Propagation::Proceed
+    });
+    widget_box.append(&widget_switch);
+    rule_box.append(&widget_box);
+
+    rule_frame.set_child(Some(&rule_box));
+    container.append(&rule_frame);
 }
 
 fn add_autostart_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
@@ -1793,21 +2181,21 @@ fn add_keybinding_row(
     // Record button
     let record_button = Button::with_label("⏺");
     record_button.set_tooltip_text(Some("Click and press keys to record"));
-    
+
     let key_entry_clone = key_entry.clone();
     let record_button_clone = record_button.clone();
     record_button.connect_clicked(move |btn| {
         btn.set_label("Press keys...");
         btn.add_css_class("accent");
-        
+
         // Create event controller for key press
         let key_controller = gtk4::EventControllerKey::new();
         let btn_clone = record_button_clone.clone();
         let entry_clone = key_entry_clone.clone();
-        
+
         key_controller.connect_key_pressed(move |controller, keyval, _keycode, state| {
             let mut parts = Vec::new();
-            
+
             // Add modifiers
             if state.contains(gtk4::gdk::ModifierType::CONTROL_MASK) {
                 parts.push("ctrl");
@@ -1821,32 +2209,43 @@ fn add_keybinding_row(
             if state.contains(gtk4::gdk::ModifierType::SUPER_MASK) {
                 parts.push("super");
             }
-            
+
             // Add key name
             if let Some(name) = keyval.name() {
                 let key_name = name.to_lowercase();
                 // Skip modifier keys themselves
-                if !["control_l", "control_r", "alt_l", "alt_r", "shift_l", "shift_r", "super_l", "super_r"].contains(&key_name.as_str()) {
+                if ![
+                    "control_l",
+                    "control_r",
+                    "alt_l",
+                    "alt_r",
+                    "shift_l",
+                    "shift_r",
+                    "super_l",
+                    "super_r",
+                ]
+                .contains(&key_name.as_str())
+                {
                     parts.push(&key_name);
-                    
+
                     // Set the combo
                     let combo = parts.join("+");
                     entry_clone.set_text(&combo);
-                    
+
                     // Reset button
                     btn_clone.set_label("⏺");
                     btn_clone.remove_css_class("accent");
-                    
+
                     // Remove controller
                     if let Some(widget) = controller.widget() {
                         widget.remove_controller(controller);
                     }
                 }
             }
-            
+
             glib::Propagation::Stop
         });
-        
+
         btn.add_controller(key_controller);
     });
 
@@ -1894,7 +2293,7 @@ fn add_keybinding_row(
         let action_text = action_entry_clone.text().to_string().trim().to_string();
 
         let mut cfg = config_clone.borrow_mut();
-        
+
         // Remove old key if it changed
         let old_key_val = old_key.borrow().clone();
         if !old_key_val.is_empty() && old_key_val != key_text {
@@ -1908,7 +2307,10 @@ fn add_keybinding_row(
             if cfg.keybindings.is_none() {
                 cfg.keybindings = Some(std::collections::HashMap::new());
             }
-            cfg.keybindings.as_mut().unwrap().insert(key_text.clone(), action_text);
+            cfg.keybindings
+                .as_mut()
+                .unwrap()
+                .insert(key_text.clone(), action_text);
             *old_key.borrow_mut() = key_text;
         }
     };
@@ -1927,8 +2329,7 @@ fn add_keybinding_row(
     container.append(&row);
 }
 
-
-    // Action entry
+// Action entry
 
 fn get_config_path() -> PathBuf {
     let config_home = std::env::var("XDG_CONFIG_HOME")

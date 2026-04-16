@@ -47,6 +47,9 @@ pub struct DriftwmConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keybindings: Option<HashMap<String, String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub window_rules: Option<Vec<WindowRule>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -254,6 +257,33 @@ pub struct BackendConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_direct_scanout: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct WindowRule {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub app_id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub position: Option<[i32; 2]>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<[i32; 2]>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub widget: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decoration: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blur: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub opacity: Option<f64>,
 }
 
 impl DriftwmConfig {
