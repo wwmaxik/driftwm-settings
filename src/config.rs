@@ -86,6 +86,12 @@ pub struct KeyboardConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub layout_independent: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub num_lock: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub caps_lock: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -179,6 +185,12 @@ pub struct ZoomConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fit_padding: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reset_on_new_window: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reset_on_activation: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

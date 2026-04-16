@@ -483,6 +483,68 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     independent_box.append(&independent_switch);
     page.append(&independent_box);
 
+    // Num Lock
+    let num_lock_box = create_row();
+    add_label(&num_lock_box, "Num Lock on startup:", 200);
+    let num_lock_switch = Switch::new();
+    num_lock_switch.set_active(
+        config
+            .borrow()
+            .input
+            .as_ref()
+            .and_then(|i| i.keyboard.as_ref())
+            .and_then(|k| k.num_lock)
+            .unwrap_or(true),
+    );
+
+    let config_clone = config.clone();
+    num_lock_switch.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        ensure_input_keyboard(&mut cfg);
+        cfg.input
+            .as_mut()
+            .unwrap()
+            .keyboard
+            .as_mut()
+            .unwrap()
+            .num_lock = Some(state);
+        gtk4::glib::Propagation::Proceed
+    });
+
+    num_lock_box.append(&num_lock_switch);
+    page.append(&num_lock_box);
+
+    // Caps Lock
+    let caps_lock_box = create_row();
+    add_label(&caps_lock_box, "Caps Lock on startup:", 200);
+    let caps_lock_switch = Switch::new();
+    caps_lock_switch.set_active(
+        config
+            .borrow()
+            .input
+            .as_ref()
+            .and_then(|i| i.keyboard.as_ref())
+            .and_then(|k| k.caps_lock)
+            .unwrap_or(false),
+    );
+
+    let config_clone = config.clone();
+    caps_lock_switch.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        ensure_input_keyboard(&mut cfg);
+        cfg.input
+            .as_mut()
+            .unwrap()
+            .keyboard
+            .as_mut()
+            .unwrap()
+            .caps_lock = Some(state);
+        gtk4::glib::Propagation::Proceed
+    });
+
+    caps_lock_box.append(&caps_lock_switch);
+    page.append(&caps_lock_box);
+
     stack.add_titled(&page, Some("keyboard"), "Keyboard");
 }
 
@@ -1248,6 +1310,62 @@ fn add_zoom_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     padding_box.append(&padding_spin);
     page.append(&padding_box);
+
+    // Reset on new window
+    let reset_new_box = create_row();
+    add_label(&reset_new_box, "Reset zoom on new window:", 200);
+    let reset_new_switch = Switch::new();
+    reset_new_switch.set_active(
+        config
+            .borrow()
+            .zoom
+            .as_ref()
+            .and_then(|z| z.reset_on_new_window)
+            .unwrap_or(true),
+    );
+    reset_new_switch.set_tooltip_text(Some("Animate zoom to 1.0 when a new window is mapped"));
+
+    let config_clone = config.clone();
+    reset_new_switch.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        if cfg.zoom.is_none() {
+            cfg.zoom = Some(ZoomConfig::default());
+        }
+        cfg.zoom.as_mut().unwrap().reset_on_new_window = Some(state);
+        gtk4::glib::Propagation::Proceed
+    });
+
+    reset_new_box.append(&reset_new_switch);
+    page.append(&reset_new_box);
+
+    // Reset on activation
+    let reset_activation_box = create_row();
+    add_label(&reset_activation_box, "Reset zoom on activation:", 200);
+    let reset_activation_switch = Switch::new();
+    reset_activation_switch.set_active(
+        config
+            .borrow()
+            .zoom
+            .as_ref()
+            .and_then(|z| z.reset_on_activation)
+            .unwrap_or(true),
+    );
+    reset_activation_switch.set_tooltip_text(Some(
+        "Animate zoom to 1.0 when an off-screen window requests focus",
+    ));
+
+    let config_clone = config.clone();
+    reset_activation_switch.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        if cfg.zoom.is_none() {
+            cfg.zoom = Some(ZoomConfig::default());
+        }
+        cfg.zoom.as_mut().unwrap().reset_on_activation = Some(state);
+        gtk4::glib::Propagation::Proceed
+    });
+
+    reset_activation_box.append(&reset_activation_switch);
+    page.append(&reset_activation_box);
 
     stack.add_titled(&page, Some("zoom"), "Zoom");
 }
