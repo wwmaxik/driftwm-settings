@@ -210,7 +210,6 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>)
 
     let scrolled = ScrolledWindow::new();
     scrolled.set_vexpand(true);
-    scrolled.set_min_content_height(400);
 
     let text_view = TextView::new();
     text_view.set_monospace(true);

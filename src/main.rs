@@ -1890,7 +1890,6 @@ fn add_window_rules_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     // Scrolled window for rules list
     let scrolled = ScrolledWindow::new();
     scrolled.set_vexpand(true);
-    scrolled.set_min_content_height(400);
 
     let rules_container = Box::new(Orientation::Vertical, 12);
     rules_container.set_margin_top(12);
@@ -2112,7 +2111,6 @@ fn add_autostart_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     // Text view for autostart commands
     let scrolled = ScrolledWindow::new();
     scrolled.set_vexpand(true);
-    scrolled.set_min_content_height(300);
 
     let text_view = TextView::new();
     text_view.set_monospace(true);
@@ -2252,7 +2250,6 @@ fn add_keybindings_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     // Scrolled window for keybindings list
     let scrolled = ScrolledWindow::new();
     scrolled.set_vexpand(true);
-    scrolled.set_min_content_height(400);
 
     let bindings_box = Box::new(Orientation::Vertical, 6);
     scrolled.set_child(Some(&bindings_box));
