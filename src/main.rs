@@ -1887,17 +1887,12 @@ fn add_window_rules_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     info_label.add_css_class("dim-label");
     page.append(&info_label);
 
-    // Scrolled window for rules list
-    let scrolled = ScrolledWindow::new();
-    scrolled.set_vexpand(true);
-
+    // Rules container
     let rules_container = Box::new(Orientation::Vertical, 12);
     rules_container.set_margin_top(12);
     rules_container.set_margin_bottom(12);
     rules_container.set_margin_start(12);
     rules_container.set_margin_end(12);
-
-    scrolled.set_child(Some(&rules_container));
 
     // Load existing rules
     let existing_rules = config.borrow().window_rules.clone().unwrap_or_default();
@@ -1906,7 +1901,7 @@ fn add_window_rules_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
         add_window_rule_row(&rules_container, config.clone(), idx, rule.clone());
     }
 
-    page.append(&scrolled);
+    page.append(&rules_container);
 
     // Add button
     let add_button = Button::with_label("+ Add Window Rule");
@@ -2247,12 +2242,8 @@ fn add_keybindings_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     info_label.add_css_class("dim-label");
     page.append(&info_label);
 
-    // Scrolled window for keybindings list
-    let scrolled = ScrolledWindow::new();
-    scrolled.set_vexpand(true);
-
+    // Keybindings container
     let bindings_box = Box::new(Orientation::Vertical, 6);
-    scrolled.set_child(Some(&bindings_box));
 
     // Load existing keybindings
     let existing_bindings = config.borrow().keybindings.clone().unwrap_or_default();
@@ -2266,7 +2257,7 @@ fn add_keybindings_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
         );
     }
 
-    page.append(&scrolled);
+    page.append(&bindings_box);
 
     // Add button
     let add_button = Button::with_label("+ Add Keybinding");
