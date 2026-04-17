@@ -84,6 +84,14 @@ fn build_ui(app: &Application) {
     scrolled.set_hexpand(true);
     scrolled.set_vexpand(true);
 
+    // Reset scroll position when switching pages
+    let scrolled_clone = scrolled.clone();
+    stack.connect_visible_child_notify(move |_| {
+        // Reset scroll to top when page changes
+        scrolled_clone.vadjustment().set_value(0.0);
+        scrolled_clone.hadjustment().set_value(0.0);
+    });
+
     main_hbox.append(&sidebar);
     main_hbox.append(&scrolled);
 
@@ -155,8 +163,8 @@ fn build_ui(app: &Application) {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("driftwm Settings")
-        .default_width(1000)
-        .default_height(700)
+        .default_width(900)
+        .default_height(650)
         .child(&vbox)
         .build();
 
@@ -452,9 +460,9 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     delay_box.append(&delay_spin);
     page.append(&delay_box);
 
-    // Layout independent
+    // Layout independent keybindings
     let independent_box = create_row();
-    add_label(&independent_box, "Layout independent:", 200);
+    add_label(&independent_box, "Layout independent keybindings:", 200);
     let independent_switch = Switch::new();
     independent_switch.set_active(
         config
@@ -465,6 +473,9 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|k| k.layout_independent)
             .unwrap_or(true),
     );
+    independent_switch.set_tooltip_text(Some(
+        "Match bindings by physical key position across layouts",
+    ));
 
     let config_clone = config.clone();
     independent_switch.connect_state_set(move |_, state| {

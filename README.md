@@ -11,10 +11,12 @@ Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm)
 ## Features
 
 - 🎨 **Native GTK4 interface** with sidebar navigation
-- ⚙️ **All driftwm settings** - 13 configuration pages covering every option
+- ⚙️ **All driftwm settings** - 15+ configuration pages covering every option
 - 💾 **Live editing** - changes update config structure in real-time
 - 🔄 **Hot reload support** - driftwm automatically reloads config on save
 - 📝 **TOML format** - reads/writes `~/.config/driftwm/config.toml`
+- 🎭 **Interactive Shader Editor** - create custom animated backgrounds with visual controls
+- 🪟 **Window Rules** - per-app blur, opacity, and decoration settings
 
 ## Settings Pages
 
@@ -25,7 +27,8 @@ Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm)
 ### 2. Keyboard
 - Layout, variant, options, model
 - Repeat rate and delay
-- Layout independent bindings
+- Layout independent keybindings
+- Num Lock and Caps Lock startup state
 
 ### 3. Trackpad
 - Tap to click, natural scroll, tap and drag
@@ -44,10 +47,12 @@ Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm)
 - Trackpad and mouse speed
 - Friction and animation speed
 - Nudge and pan step
+- Edge pan settings
 
 ### 7. Zoom
 - Zoom step multiplier
 - Fit padding
+- Reset on new window/activation
 
 ### 8. Snap
 - Enable/disable snapping
@@ -59,17 +64,41 @@ Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm)
 - Corner radius
 
 ### 10. Effects
-- Blur radius and strength
+- Blur radius (0-20 passes) and strength (0.1-5.0)
+- 6 blur presets: None, Light, Default, Medium, Strong, Extreme
 
-### 11. Background
+### 11. Window Rules
+- Per-app blur, opacity, decoration settings
+- Match by app_id and/or title (glob support)
+- Widget mode (pinned windows)
+- Dynamic add/remove rules
+
+### 12. Backend
+- Wait for frame completion
+- Disable direct scanout
+- NVIDIA environment variables guide
+
+### 13. Background
 - Shader path (GLSL)
 - Tile path (PNG/JPG)
+- Quick access to Shader Editor
 
-### 12. Autostart
+### 14. Shader Editor ✨ NEW
+- **Visual Mode**: Interactive controls for colors, animation, effects
+  - 3 shader templates: Gradient, Animated Waves, Clouds
+  - RGB color pickers for primary and secondary colors
+  - Animation speed, pattern scale, complexity controls
+  - Vignette and glow effects
+- **Raw Mode**: Full GLSL code editor for advanced users
+- Generate and save custom shaders
+- Apply directly to background
+
+### 15. Keybindings
+- Custom keyboard shortcuts
+- Add/remove bindings dynamically
+
+### 16. Autostart
 - Multi-line editor for startup commands
-
-### 13. Output
-- (Reserved for future multi-monitor settings)
 
 ## Installation
 
@@ -124,17 +153,16 @@ cargo run
 ```
 driftwmsettings/
 ├── src/
-│   ├── main.rs           # UI and page implementations (1343 lines)
-│   ├── config.rs         # TOML config structures (259 lines)
-│   ├── config_helpers.rs # Config initialization helpers (41 lines)
-│   └── ui_helpers.rs     # UI widget helpers (47 lines)
+│   ├── main.rs           # UI and page implementations
+│   ├── config.rs         # TOML config structures
+│   ├── config_helpers.rs # Config initialization helpers
+│   ├── ui_helpers.rs     # UI widget helpers
+│   └── shader_editor.rs  # Interactive shader editor
 ├── Cargo.toml
 ├── Makefile
 ├── README.md
 └── driftwm-settings.desktop
 ```
-
-**Total**: 1690 lines of Rust code
 
 ## Configuration
 
@@ -143,7 +171,32 @@ The app reads and writes to:
 ~/.config/driftwm/config.toml
 ```
 
-Changes are saved when you click the "Save Configuration" button. driftwm will automatically reload the config within 1 second (hot reload).
+Changes are saved when you click the "Save" button. driftwm will automatically reload the config within 1 second (hot reload).
+
+Custom shaders are saved to:
+```
+~/.config/driftwm/custom_shader.glsl
+```
+
+## Recent Changes (v0.2.0)
+
+### New Features
+- ✨ **Interactive Shader Editor** with Visual/Raw modes
+- 🪟 **Window Rules** page for per-app settings
+- 🎨 **Enhanced blur controls** with 6 presets
+- 📏 **Better window sizing** - reduced default size to 900x650
+- 🔄 **Scroll reset** - pages always start from top when switching
+- 🔤 **Clearer labels** - "Layout independent keybindings" with tooltip
+
+### Config Updates
+- Added `num_lock` and `caps_lock` keyboard settings
+- Added `reset_on_new_window` and `reset_on_activation` zoom settings
+- Removed `force_legacy_drm` (now uses `SMITHAY_USE_LEGACY=1` env var)
+
+### Bug Fixes
+- Fixed scroll state persisting between sections (#1)
+- Fixed default layout being too wide (#2)
+- Improved "Layout independent" label clarity (#3)
 
 ## Screenshots
 
