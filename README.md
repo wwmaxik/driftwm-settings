@@ -3,7 +3,7 @@
 Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm) compositor.
 
 ![CI](https://github.com/wwmaxik/driftwm-settings/workflows/CI/badge.svg)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
 ![Rust](https://img.shields.io/badge/rust-1.85%2B-orange)
 ![GTK](https://img.shields.io/badge/GTK-4-green)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
