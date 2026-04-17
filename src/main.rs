@@ -54,6 +54,8 @@ fn build_ui(app: &Application) {
     let stack = Stack::new();
     stack.set_transition_type(gtk4::StackTransitionType::SlideLeftRight);
     stack.set_transition_duration(150);
+    stack.set_vhomogeneous(false);
+    stack.set_hhomogeneous(false);
 
     // Sidebar
     let sidebar = StackSidebar::new();

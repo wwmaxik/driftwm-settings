@@ -3,7 +3,7 @@
 Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm) compositor.
 
 ![CI](https://github.com/wwmaxik/driftwm-settings/workflows/CI/badge.svg)
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.1-blue)
 ![Rust](https://img.shields.io/badge/rust-1.85%2B-orange)
 ![GTK](https://img.shields.io/badge/GTK-4-green)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
@@ -178,9 +178,14 @@ Custom shaders are saved to:
 ~/.config/driftwm/custom_shader.glsl
 ```
 
-## Recent Changes (v0.2.0)
+## Recent Changes
 
-### New Features
+### v0.2.1
+- 🐛 **Bug Fix:** Fixed an issue where persistent and excessive scrollbars appeared by allowing the content area to dynamically resize based on the active page instead of keeping the maximum height of the tallest page.
+
+### v0.2.0
+
+#### New Features
 - ✨ **Interactive Shader Editor** with Visual/Raw modes
 - 🪟 **Window Rules** page for per-app settings
 - 🎨 **Enhanced blur controls** with 6 presets
