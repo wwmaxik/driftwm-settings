@@ -970,6 +970,68 @@ fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     natural_box.append(&natural_switch);
     page.append(&natural_box);
 
+    // Snapped decoration resize
+    let resize_snapped_box = create_row();
+    add_label(&resize_snapped_box, "Cluster-aware resize:", 200);
+    let resize_snapped_switch = Switch::new();
+    resize_snapped_switch.set_active(
+        config
+            .borrow()
+            .input
+            .as_ref()
+            .and_then(|i| i.mouse.as_ref())
+            .and_then(|m| m.decoration_resize_snapped)
+            .unwrap_or(false),
+    );
+
+    let config_clone = config.clone();
+    resize_snapped_switch.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        ensure_input_mouse(&mut cfg);
+        cfg.input
+            .as_mut()
+            .unwrap()
+            .mouse
+            .as_mut()
+            .unwrap()
+            .decoration_resize_snapped = Some(state);
+        gtk4::glib::Propagation::Proceed
+    });
+
+    resize_snapped_box.append(&resize_snapped_switch);
+    page.append(&resize_snapped_box);
+
+    // Snapped decoration fit
+    let fit_snapped_box = create_row();
+    add_label(&fit_snapped_box, "Cluster-aware fit (maximize):", 200);
+    let fit_snapped_switch = Switch::new();
+    fit_snapped_switch.set_active(
+        config
+            .borrow()
+            .input
+            .as_ref()
+            .and_then(|i| i.mouse.as_ref())
+            .and_then(|m| m.decoration_fit_snapped)
+            .unwrap_or(false),
+    );
+
+    let config_clone = config.clone();
+    fit_snapped_switch.connect_state_set(move |_, state| {
+        let mut cfg = config_clone.borrow_mut();
+        ensure_input_mouse(&mut cfg);
+        cfg.input
+            .as_mut()
+            .unwrap()
+            .mouse
+            .as_mut()
+            .unwrap()
+            .decoration_fit_snapped = Some(state);
+        gtk4::glib::Propagation::Proceed
+    });
+
+    fit_snapped_box.append(&fit_snapped_switch);
+    page.append(&fit_snapped_box);
+
     stack.add_titled(&page, Some("mouse"), "Mouse");
 }
 
@@ -1618,6 +1680,36 @@ fn add_decorations_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     radius_box.append(&radius_spin);
     page.append(&radius_box);
 
+    // Default mode
+    let mode_box = create_row();
+    add_label(&mode_box, "Default mode:", 200);
+    let mode_combo = ComboBoxText::new();
+    mode_combo.append(Some("client"), "Client (CSD)");
+    mode_combo.append(Some("borderless"), "Borderless (SSD)");
+    mode_combo.append(Some("none"), "None (SSD)");
+
+    let current_mode = config
+        .borrow()
+        .decorations
+        .as_ref()
+        .and_then(|d| d.default_mode.clone())
+        .unwrap_or_else(|| "client".to_string());
+    mode_combo.set_active_id(Some(&current_mode));
+
+    let config_clone = config.clone();
+    mode_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let mut cfg = config_clone.borrow_mut();
+            if cfg.decorations.is_none() {
+                cfg.decorations = Some(DecorationsConfig::default());
+            }
+            cfg.decorations.as_mut().unwrap().default_mode = Some(id.to_string());
+        }
+    });
+
+    mode_box.append(&mode_combo);
+    page.append(&mode_box);
+
     stack.add_titled(&page, Some("decorations"), "Decorations");
 }
 
@@ -2010,6 +2102,82 @@ fn add_window_rule_row(
     title_box.append(&title_entry);
     rule_box.append(&title_box);
 
+    // XClass
+    let xclass_box = create_row();
+    add_label(&xclass_box, "X11 Class:", 150);
+    let xclass_entry = Entry::new();
+    xclass_entry.set_text(&rule.xclass.clone().unwrap_or_default());
+    xclass_entry.set_placeholder_text(Some("WM_CLASS class (XWayland)"));
+    xclass_entry.set_hexpand(true);
+    let config_clone = config.clone();
+    xclass_entry.connect_changed(move |entry| {
+        let mut cfg = config_clone.borrow_mut();
+        if let Some(rules) = cfg.window_rules.as_mut()
+            && let Some(rule) = rules.get_mut(idx)
+        {
+            let text = entry.text().to_string();
+            rule.xclass = if text.is_empty() { None } else { Some(text) };
+        }
+    });
+    xclass_box.append(&xclass_entry);
+    rule_box.append(&xclass_box);
+
+    // XInstance
+    let xinstance_box = create_row();
+    add_label(&xinstance_box, "X11 Instance:", 150);
+    let xinstance_entry = Entry::new();
+    xinstance_entry.set_text(&rule.xinstance.clone().unwrap_or_default());
+    xinstance_entry.set_placeholder_text(Some("WM_CLASS instance (XWayland)"));
+    xinstance_entry.set_hexpand(true);
+    let config_clone = config.clone();
+    xinstance_entry.connect_changed(move |entry| {
+        let mut cfg = config_clone.borrow_mut();
+        if let Some(rules) = cfg.window_rules.as_mut()
+            && let Some(rule) = rules.get_mut(idx)
+        {
+            let text = entry.text().to_string();
+            rule.xinstance = if text.is_empty() { None } else { Some(text) };
+        }
+    });
+    xinstance_box.append(&xinstance_entry);
+    rule_box.append(&xinstance_box);
+
+    // Pass Keys
+    let passkeys_box = create_row();
+    add_label(&passkeys_box, "Pass Keys:", 150);
+    let passkeys_entry = Entry::new();
+    let initial_passkeys = match &rule.pass_keys {
+        Some(PassKeysConfig::Boolean(b)) => b.to_string(),
+        Some(PassKeysConfig::List(l)) => l.join(", "),
+        None => String::new(),
+    };
+    passkeys_entry.set_text(&initial_passkeys);
+    passkeys_entry.set_placeholder_text(Some("true/false or mod+q, ctrl+q"));
+    passkeys_entry.set_hexpand(true);
+    let config_clone = config.clone();
+    passkeys_entry.connect_changed(move |entry| {
+        let mut cfg = config_clone.borrow_mut();
+        if let Some(rules) = cfg.window_rules.as_mut()
+            && let Some(rule) = rules.get_mut(idx)
+        {
+            let text = entry.text().to_string();
+            if text.is_empty() {
+                rule.pass_keys = None;
+            } else if text == "true" {
+                rule.pass_keys = Some(PassKeysConfig::Boolean(true));
+            } else if text == "false" {
+                rule.pass_keys = Some(PassKeysConfig::Boolean(false));
+            } else {
+                rule.pass_keys = Some(PassKeysConfig::List(
+                    text.split(',').map(|s| s.trim().to_string()).collect(),
+                ));
+            }
+        }
+    });
+    passkeys_box.append(&passkeys_entry);
+    rule_box.append(&passkeys_box);
+
+
     // Blur
     let blur_box = create_row();
     add_label(&blur_box, "Enable blur:", 150);
@@ -2055,7 +2223,8 @@ fn add_window_rule_row(
     let decoration_combo = ComboBoxText::new();
     decoration_combo.append(Some("client"), "Client");
     decoration_combo.append(Some("server"), "Server");
-    decoration_combo.append(Some("none"), "None (Borderless)");
+    decoration_combo.append(Some("borderless"), "Borderless");
+    decoration_combo.append(Some("none"), "None (Bare)");
     if let Some(dec) = &rule.decoration {
         decoration_combo.set_active_id(Some(dec));
     }

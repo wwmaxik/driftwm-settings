@@ -125,6 +125,12 @@ pub struct MouseConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub natural_scroll: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decoration_resize_snapped: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decoration_fit_snapped: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -221,6 +227,9 @@ pub struct DecorationsConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub corner_radius: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_mode: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -268,6 +277,13 @@ pub struct BackendConfig {
     pub disable_direct_scanout: Option<bool>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum PassKeysConfig {
+    Boolean(bool),
+    List(Vec<String>),
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct WindowRule {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -275,6 +291,15 @@ pub struct WindowRule {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub xclass: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub xinstance: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pass_keys: Option<PassKeysConfig>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<[i32; 2]>,
