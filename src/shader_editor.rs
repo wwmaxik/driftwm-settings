@@ -164,14 +164,20 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>,
         0.1,
         1,
     );
-    speed_spin.set_tooltip_text(Some(&crate::i18n::t("0 = static, 1 = normal, 10 = very fast", lang)));
+    speed_spin.set_tooltip_text(Some(&crate::i18n::t(
+        "0 = static, 1 = normal, 10 = very fast",
+        lang,
+    )));
     speed_box.append(&speed_spin);
     visual_container.append(&speed_box);
 
     let scale_box = create_row();
     add_label(&scale_box, &crate::i18n::t("Pattern Scale:", lang), 200);
     let scale_spin = SpinButton::new(Some(&Adjustment::new(1.0, 0.1, 5.0, 0.1, 0.5, 0.0)), 0.1, 1);
-    scale_spin.set_tooltip_text(Some(&crate::i18n::t("Smaller = zoomed in, Larger = zoomed out", lang)));
+    scale_spin.set_tooltip_text(Some(&crate::i18n::t(
+        "Smaller = zoomed in, Larger = zoomed out",
+        lang,
+    )));
     scale_box.append(&scale_spin);
     visual_container.append(&scale_box);
 
@@ -222,7 +228,10 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>,
     text_view.set_wrap_mode(gtk4::WrapMode::None);
 
     let buffer = text_view.buffer();
-    buffer.set_text(&crate::i18n::t("// Shader code will appear here when you switch to Raw mode", lang));
+    buffer.set_text(&crate::i18n::t(
+        "// Shader code will appear here when you switch to Raw mode",
+        lang,
+    ));
 
     scrolled.set_child(Some(&text_view));
     raw_container.append(&scrolled);
@@ -261,11 +270,22 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>,
     let button_box = Box::new(Orientation::Horizontal, 12);
     button_box.set_margin_top(12);
 
-    setup_buttons(&button_box, &config, &visual_container, &buffer, &params, lang);
+    setup_buttons(
+        &button_box,
+        &config,
+        &visual_container,
+        &buffer,
+        &params,
+        lang,
+    );
 
     page.append(&button_box);
 
-    stack.add_titled(&page, Some("shader_editor"), &crate::i18n::t("Shader Editor", lang));
+    stack.add_titled(
+        &page,
+        Some("shader_editor"),
+        &crate::i18n::t("Shader Editor", lang),
+    );
 }
 
 fn setup_mode_switching(

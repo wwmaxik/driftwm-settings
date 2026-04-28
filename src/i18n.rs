@@ -10,7 +10,9 @@ pub fn t(key: &str, lang: impl AsRef<str>) -> String {
             "#FFFFFF" => "#FFFFFF",
             "+ Add Keybinding" => "+ Добавить горячую клавишу",
             "+ Add Window Rule" => "+ Добавить правило окна",
-            "0 = static, 1 = normal, 10 = very fast" => "0 = статично, 1 = нормально, 10 = очень быстро",
+            "0 = static, 1 = normal, 10 = very fast" => {
+                "0 = статично, 1 = нормально, 10 = очень быстро"
+            }
             "A configuration tool for driftwm." => "Инструмент настройки для driftwm.",
             "Acceleration profile:" => "Профиль ускорения:",
             "Acceleration speed:" => "Скорость ускорения:",
@@ -18,7 +20,9 @@ pub fn t(key: &str, lang: impl AsRef<str>) -> String {
             "Adwaita (Default)" => "Adwaita (По умолчанию)",
             "Alt" => "Alt",
             "Alt+Shift to switch layout" => "Alt+Shift для переключения раскладки",
-            "Animate zoom to 1.0 when a new window is mapped" => "Анимировать масштаб до 1.0 при открытии нового окна",
+            "Animate zoom to 1.0 when a new window is mapped" => {
+                "Анимировать масштаб до 1.0 при открытии нового окна"
+            }
             "Animated Waves" => "Анимированные волны",
             "Animation" => "Анимация",
             "Animation Speed:" => "Скорость анимации:",
@@ -77,13 +81,17 @@ pub fn t(key: &str, lang: impl AsRef<str>) -> String {
             "Enable blur:" => "Включить размытие:",
             "Enable snapping:" => "Включить прилипание:",
             "English" => "English",
-            "Enter commands to run at startup (one per line):" => "Введите команды для запуска при старте (по одной на строку):",
+            "Enter commands to run at startup (one per line):" => {
+                "Введите команды для запуска при старте (по одной на строку):"
+            }
             "Environment Variables" => "Переменные окружения",
             "Extreme (10, 2.0)" => "Экстремальное (10, 2.0)",
             "Fit padding (px):" => "Отступы при вмещении (px):",
             "Flat" => "Плоский (Flat)",
             "Focus follows mouse:" => "Фокус следует за мышью:",
-            "Force EGL composition (disable direct scanout)" => "Принудительный EGL-композитинг (отключает direct scanout)",
+            "Force EGL composition (disable direct scanout)" => {
+                "Принудительный EGL-композитинг (отключает direct scanout)"
+            }
             "Foreground color:" => "Цвет текста:",
             "Friction:" => "Трение:",
             "G:" => "G:",
@@ -184,18 +192,42 @@ pub fn t(key: &str, lang: impl AsRef<str>) -> String {
             "Русский" => "Русский",
             "−" => "−",
             "⏺" => "⏺",
-            "Blur effects are applied to windows with blur enabled in window rules.\nHigher values increase blur quality but may impact performance." => "Эффекты размытия применяются к окнам с включенным размытием в правилах окон.\nБолее высокие значения улучшают качество размытия, но могут повлиять на производительность.",
-            "Controls blur intensity through multiple passes (0 = disabled, 2 = default, 10+ = very strong)" => "Управляет интенсивностью размытия через количество проходов (0 = выключено, 2 = по умолчанию, 10+ = очень сильное)",
-            "Controls blur spread per pass (0.5 = tight, 1.1 = default, 3.0+ = very wide)" => "Управляет разбросом размытия за один проход (0.5 = узкое, 1.1 = по умолчанию, 3.0+ = очень широкое)",
-            "Note: To enable blur for specific windows, add window rules with blur = true and opacity < 1.0" => "Примечание: Чтобы включить размытие для конкретных окон, добавьте правила окон с blur = true и opacity < 1.0",
-            "Configure per-window settings like blur, opacity, position, and decorations.\nFind app_id: cat $XDG_RUNTIME_DIR/driftwm/state" => "Настройте параметры для каждого окна, такие как размытие, прозрачность, положение и декорации.\nУзнать app_id: cat $XDG_RUNTIME_DIR/driftwm/state",
-            "Hardware stability quirks. All default to false (opt-in).\nEnable these if you experience flickering, crashes, or rendering issues.\nParticularly useful on NVIDIA GPUs with proprietary drivers." => "Исправления для стабильности оборудования. Все по умолчанию выключены (false).\nВключите их, если вы столкнулись с мерцанием, вылетами или проблемами с рендерингом.\nОсобенно полезно на видеокартах NVIDIA с проприетарными драйверами.",
-            "Note: These flags must be set before launching driftwm. Changing them requires a restart." => "Примечание: Эти флаги должны быть установлены до запуска driftwm. Изменение требует перезапуска.",
-            "For additional NVIDIA-specific settings, set these environment variables\nin your session wrapper script or shell profile before starting driftwm:\n\n  export SMITHAY_USE_LEGACY=1          # Use legacy DRM API instead of atomic modesetting\n  export __GL_GSYNC_ALLOWED=0\n  export __GL_VRR_ALLOWED=0\n  export __GL_MaxFramesAllowed=1\n  export NVD_BACKEND=direct" => "Для дополнительных настроек NVIDIA установите эти переменные окружения\nв скрипте запуска сессии или профиле оболочки перед запуском driftwm:\n\n  export SMITHAY_USE_LEGACY=1          # Использовать устаревший DRM API вместо atomic modesetting\n  export __GL_GSYNC_ALLOWED=0\n  export __GL_VRR_ALLOWED=0\n  export __GL_MaxFramesAllowed=1\n  export NVD_BACKEND=direct",
-            "Configure custom keyboard shortcuts. Click + to add new bindings." => "Настройте пользовательские сочетания клавиш. Нажмите +, чтобы добавить новые привязки.",
-            "Create custom animated backgrounds with visual controls. Switch to Raw mode for advanced editing." => "Создавайте свои анимированные фоны с помощью визуальных элементов управления. Переключитесь в режим Raw для расширенного редактирования.",
-            "Number of detail layers (higher = more detailed but slower)" => "Количество слоев детализации (выше = детальнее, но медленнее)",
-            "// Shader code will appear here when you switch to Raw mode" => "// Код шейдера появится здесь при переключении в режим Raw",
+            "Blur effects are applied to windows with blur enabled in window rules.\nHigher values increase blur quality but may impact performance." => {
+                "Эффекты размытия применяются к окнам с включенным размытием в правилах окон.\nБолее высокие значения улучшают качество размытия, но могут повлиять на производительность."
+            }
+            "Controls blur intensity through multiple passes (0 = disabled, 2 = default, 10+ = very strong)" => {
+                "Управляет интенсивностью размытия через количество проходов (0 = выключено, 2 = по умолчанию, 10+ = очень сильное)"
+            }
+            "Controls blur spread per pass (0.5 = tight, 1.1 = default, 3.0+ = very wide)" => {
+                "Управляет разбросом размытия за один проход (0.5 = узкое, 1.1 = по умолчанию, 3.0+ = очень широкое)"
+            }
+            "Note: To enable blur for specific windows, add window rules with blur = true and opacity < 1.0" => {
+                "Примечание: Чтобы включить размытие для конкретных окон, добавьте правила окон с blur = true и opacity < 1.0"
+            }
+            "Configure per-window settings like blur, opacity, position, and decorations.\nFind app_id: cat $XDG_RUNTIME_DIR/driftwm/state" => {
+                "Настройте параметры для каждого окна, такие как размытие, прозрачность, положение и декорации.\nУзнать app_id: cat $XDG_RUNTIME_DIR/driftwm/state"
+            }
+            "Hardware stability quirks. All default to false (opt-in).\nEnable these if you experience flickering, crashes, or rendering issues.\nParticularly useful on NVIDIA GPUs with proprietary drivers." => {
+                "Исправления для стабильности оборудования. Все по умолчанию выключены (false).\nВключите их, если вы столкнулись с мерцанием, вылетами или проблемами с рендерингом.\nОсобенно полезно на видеокартах NVIDIA с проприетарными драйверами."
+            }
+            "Note: These flags must be set before launching driftwm. Changing them requires a restart." => {
+                "Примечание: Эти флаги должны быть установлены до запуска driftwm. Изменение требует перезапуска."
+            }
+            "For additional NVIDIA-specific settings, set these environment variables\nin your session wrapper script or shell profile before starting driftwm:\n\n  export SMITHAY_USE_LEGACY=1          # Use legacy DRM API instead of atomic modesetting\n  export __GL_GSYNC_ALLOWED=0\n  export __GL_VRR_ALLOWED=0\n  export __GL_MaxFramesAllowed=1\n  export NVD_BACKEND=direct" => {
+                "Для дополнительных настроек NVIDIA установите эти переменные окружения\nв скрипте запуска сессии или профиле оболочки перед запуском driftwm:\n\n  export SMITHAY_USE_LEGACY=1          # Использовать устаревший DRM API вместо atomic modesetting\n  export __GL_GSYNC_ALLOWED=0\n  export __GL_VRR_ALLOWED=0\n  export __GL_MaxFramesAllowed=1\n  export NVD_BACKEND=direct"
+            }
+            "Configure custom keyboard shortcuts. Click + to add new bindings." => {
+                "Настройте пользовательские сочетания клавиш. Нажмите +, чтобы добавить новые привязки."
+            }
+            "Create custom animated backgrounds with visual controls. Switch to Raw mode for advanced editing." => {
+                "Создавайте свои анимированные фоны с помощью визуальных элементов управления. Переключитесь в режим Raw для расширенного редактирования."
+            }
+            "Number of detail layers (higher = more detailed but slower)" => {
+                "Количество слоев детализации (выше = детальнее, но медленнее)"
+            }
+            "// Shader code will appear here when you switch to Raw mode" => {
+                "// Код шейдера появится здесь при переключении в режим Raw"
+            }
             _ => key,
         };
         return res.to_string();
