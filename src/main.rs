@@ -1,5 +1,7 @@
+mod app_config;
 mod config;
 mod config_helpers;
+mod i18n;
 mod shader_editor;
 mod ui_helpers;
 
@@ -40,6 +42,27 @@ fn main() {
 }
 
 fn build_ui(app: &Application) {
+    let app_settings = app_config::AppSettings::load().unwrap_or_default();
+    let lang = app_settings.language.clone();
+
+    // Apply theme
+    if let Some(display) = gtk4::gdk::Display::default() {
+        let gtk_settings = gtk4::Settings::for_display(&display);
+        println!("Applying theme from config: {}", app_settings.theme);
+        match app_settings.theme.as_str() {
+            "light" => {
+                gtk_settings.set_property("gtk-application-prefer-dark-theme", false);
+            }
+            "dark" => {
+                gtk_settings.set_property("gtk-application-prefer-dark-theme", true);
+            }
+            _ => {
+                // System default: we don't force it
+                gtk_settings.reset_property("gtk-application-prefer-dark-theme");
+            }
+        }
+    }
+
     let config_path = get_config_path();
     let config = DriftwmConfig::load(&config_path).unwrap_or_default();
     let config_rc = Rc::new(RefCell::new(config));
@@ -63,22 +86,23 @@ fn build_ui(app: &Application) {
     sidebar.set_width_request(180);
 
     // Add pages to stack with icons
-    add_general_page(&stack, config_rc.clone());
-    add_keyboard_page(&stack, config_rc.clone());
-    add_trackpad_page(&stack, config_rc.clone());
-    add_mouse_page(&stack, config_rc.clone());
-    add_cursor_page(&stack, config_rc.clone());
-    add_navigation_page(&stack, config_rc.clone());
-    add_zoom_page(&stack, config_rc.clone());
-    add_snap_page(&stack, config_rc.clone());
-    add_decorations_page(&stack, config_rc.clone());
-    add_effects_page(&stack, config_rc.clone());
-    add_window_rules_page(&stack, config_rc.clone());
-    add_backend_page(&stack, config_rc.clone());
-    add_background_page(&stack, config_rc.clone());
-    add_shader_editor_page(&stack, config_rc.clone());
-    add_keybindings_page(&stack, config_rc.clone());
-    add_autostart_page(&stack, config_rc.clone());
+    add_general_page(&stack, config_rc.clone(), &lang);
+    add_keyboard_page(&stack, config_rc.clone(), &lang);
+    add_trackpad_page(&stack, config_rc.clone(), &lang);
+    add_mouse_page(&stack, config_rc.clone(), &lang);
+    add_cursor_page(&stack, config_rc.clone(), &lang);
+    add_navigation_page(&stack, config_rc.clone(), &lang);
+    add_zoom_page(&stack, config_rc.clone(), &lang);
+    add_snap_page(&stack, config_rc.clone(), &lang);
+    add_decorations_page(&stack, config_rc.clone(), &lang);
+    add_effects_page(&stack, config_rc.clone(), &lang);
+    add_window_rules_page(&stack, config_rc.clone(), &lang);
+    add_backend_page(&stack, config_rc.clone(), &lang);
+    add_background_page(&stack, config_rc.clone(), &lang);
+    add_shader_editor_page(&stack, config_rc.clone(), &lang);
+    add_keybindings_page(&stack, config_rc.clone(), &lang);
+    add_autostart_page(&stack, config_rc.clone(), &lang);
+    add_app_settings_page(&stack, &lang);
 
     // Scrolled window for stack content
     let scrolled = ScrolledWindow::new();
@@ -113,7 +137,7 @@ fn build_ui(app: &Application) {
     statusbar.append(&path_label);
 
     // Save button
-    let save_button = Button::with_label("Save");
+    let save_button = Button::with_label(&crate::i18n::t("Save", lang));
     save_button.add_css_class("suggested-action");
 
     let config_clone = config_rc.clone();
@@ -174,19 +198,19 @@ fn build_ui(app: &Application) {
     window.present();
 }
 
-fn add_general_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_general_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "General Settings");
+    add_header(&page, &crate::i18n::t("General Settings", lang));
 
     // Modifier key
     let mod_box = create_row();
-    add_label(&mod_box, "Modifier key:", 200);
+    add_label(&mod_box, &crate::i18n::t("Modifier key:", lang), 200);
 
     let mod_combo = ComboBoxText::new();
-    mod_combo.append(Some("super"), "Super (Windows key)");
-    mod_combo.append(Some("alt"), "Alt");
-    mod_combo.append(Some("custom"), "Custom...");
+    mod_combo.append(Some("super"), &crate::i18n::t("Super (Windows key)", lang));
+    mod_combo.append(Some("alt"), &crate::i18n::t("Alt", lang));
+    mod_combo.append(Some("custom"), &crate::i18n::t("Custom...", lang));
 
     let current_mod = config
         .borrow()
@@ -203,7 +227,7 @@ fn add_general_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     mod_entry.set_text(&current_mod);
     mod_entry.set_hexpand(true);
     mod_entry.set_visible(current_mod != "super" && current_mod != "alt");
-    mod_entry.set_placeholder_text(Some("e.g., ctrl, shift"));
+    mod_entry.set_placeholder_text(Some(&crate::i18n::t("e.g., ctrl, shift", lang)));
 
     let config_clone = config.clone();
     let entry_clone = mod_entry.clone();
@@ -230,7 +254,7 @@ fn add_general_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Focus follows mouse
     let focus_box = create_row();
-    add_label(&focus_box, "Focus follows mouse:", 200);
+    add_label(&focus_box, &crate::i18n::t("Focus follows mouse:", lang), 200);
     let focus_switch = Switch::new();
     focus_switch.set_active(config.borrow().focus_follows_mouse.unwrap_or(false));
 
@@ -243,17 +267,17 @@ fn add_general_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     focus_box.append(&focus_switch);
     page.append(&focus_box);
 
-    stack.add_titled(&page, Some("general"), "General");
+    stack.add_titled(&page, Some("general"), &crate::i18n::t("General", lang));
 }
 
-fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Keyboard Settings");
+    add_header(&page, &crate::i18n::t("Keyboard Settings", lang));
 
     // Layout
     let layout_box = create_row();
-    add_label(&layout_box, "Layout:", 200);
+    add_label(&layout_box, &crate::i18n::t("Layout:", lang), 200);
     let layout_entry = Entry::new();
     layout_entry.set_text(
         &config
@@ -264,7 +288,7 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|k| k.layout.clone())
             .unwrap_or_else(|| "us".to_string()),
     );
-    layout_entry.set_placeholder_text(Some("us,ru"));
+    layout_entry.set_placeholder_text(Some(&crate::i18n::t("us,ru", lang)));
     layout_entry.set_hexpand(true);
 
     let config_clone = config.clone();
@@ -285,7 +309,7 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Variant
     let variant_box = create_row();
-    add_label(&variant_box, "Variant:", 200);
+    add_label(&variant_box, &crate::i18n::t("Variant:", lang), 200);
     let variant_entry = Entry::new();
     variant_entry.set_text(
         &config
@@ -296,7 +320,7 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|k| k.variant.clone())
             .unwrap_or_default(),
     );
-    variant_entry.set_placeholder_text(Some("dvorak"));
+    variant_entry.set_placeholder_text(Some(&crate::i18n::t("dvorak", lang)));
     variant_entry.set_hexpand(true);
 
     let config_clone = config.clone();
@@ -317,15 +341,15 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Options with dropdown
     let options_box = create_row();
-    add_label(&options_box, "Options:", 200);
+    add_label(&options_box, &crate::i18n::t("Options:", lang), 200);
 
     let options_combo = ComboBoxText::new();
-    options_combo.append(Some("grp:win_space_toggle"), "Super+Space to switch layout");
-    options_combo.append(Some("grp:alt_shift_toggle"), "Alt+Shift to switch layout");
-    options_combo.append(Some("grp:ctrl_shift_toggle"), "Ctrl+Shift to switch layout");
-    options_combo.append(Some("caps:escape"), "Caps Lock as Escape");
-    options_combo.append(Some("caps:ctrl_modifier"), "Caps Lock as Ctrl");
-    options_combo.append(Some("custom"), "Custom...");
+    options_combo.append(Some("grp:win_space_toggle"), &crate::i18n::t("Super+Space to switch layout", lang));
+    options_combo.append(Some("grp:alt_shift_toggle"), &crate::i18n::t("Alt+Shift to switch layout", lang));
+    options_combo.append(Some("grp:ctrl_shift_toggle"), &crate::i18n::t("Ctrl+Shift to switch layout", lang));
+    options_combo.append(Some("caps:escape"), &crate::i18n::t("Caps Lock as Escape", lang));
+    options_combo.append(Some("caps:ctrl_modifier"), &crate::i18n::t("Caps Lock as Ctrl", lang));
+    options_combo.append(Some("custom"), &crate::i18n::t("Custom...", lang));
 
     let current_options = config
         .borrow()
@@ -396,7 +420,7 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Repeat rate
     let rate_box = create_row();
-    add_label(&rate_box, "Repeat rate (keys/sec):", 200);
+    add_label(&rate_box, &crate::i18n::t("Repeat rate (keys/sec):", lang), 200);
     let rate_spin = SpinButton::new(
         Some(&Adjustment::new(25.0, 1.0, 100.0, 1.0, 5.0, 0.0)),
         1.0,
@@ -430,7 +454,7 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Repeat delay
     let delay_box = create_row();
-    add_label(&delay_box, "Repeat delay (ms):", 200);
+    add_label(&delay_box, &crate::i18n::t("Repeat delay (ms):", lang), 200);
     let delay_spin = SpinButton::new(
         Some(&Adjustment::new(200.0, 100.0, 1000.0, 10.0, 50.0, 0.0)),
         10.0,
@@ -464,7 +488,7 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Layout independent keybindings
     let independent_box = create_row();
-    add_label(&independent_box, "Layout independent keybindings:", 200);
+    add_label(&independent_box, &crate::i18n::t("Layout independent keybindings:", lang), 200);
     let independent_switch = Switch::new();
     independent_switch.set_active(
         config
@@ -498,7 +522,7 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Num Lock
     let num_lock_box = create_row();
-    add_label(&num_lock_box, "Num Lock on startup:", 200);
+    add_label(&num_lock_box, &crate::i18n::t("Num Lock on startup:", lang), 200);
     let num_lock_switch = Switch::new();
     num_lock_switch.set_active(
         config
@@ -529,7 +553,7 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Caps Lock
     let caps_lock_box = create_row();
-    add_label(&caps_lock_box, "Caps Lock on startup:", 200);
+    add_label(&caps_lock_box, &crate::i18n::t("Caps Lock on startup:", lang), 200);
     let caps_lock_switch = Switch::new();
     caps_lock_switch.set_active(
         config
@@ -558,17 +582,17 @@ fn add_keyboard_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     caps_lock_box.append(&caps_lock_switch);
     page.append(&caps_lock_box);
 
-    stack.add_titled(&page, Some("keyboard"), "Keyboard");
+    stack.add_titled(&page, Some("keyboard"), &crate::i18n::t("Keyboard", lang));
 }
 
-fn add_trackpad_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_trackpad_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Trackpad Settings");
+    add_header(&page, &crate::i18n::t("Trackpad Settings", lang));
 
     // Tap to click
     let tap_box = create_row();
-    add_label(&tap_box, "Tap to click:", 200);
+    add_label(&tap_box, &crate::i18n::t("Tap to click:", lang), 200);
     let tap_switch = Switch::new();
     tap_switch.set_active(
         config
@@ -599,7 +623,7 @@ fn add_trackpad_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Natural scroll
     let natural_box = create_row();
-    add_label(&natural_box, "Natural scroll:", 200);
+    add_label(&natural_box, &crate::i18n::t("Natural scroll:", lang), 200);
     let natural_switch = Switch::new();
     natural_switch.set_active(
         config
@@ -630,7 +654,7 @@ fn add_trackpad_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Tap and drag
     let drag_box = create_row();
-    add_label(&drag_box, "Tap and drag:", 200);
+    add_label(&drag_box, &crate::i18n::t("Tap and drag:", lang), 200);
     let drag_switch = Switch::new();
     drag_switch.set_active(
         config
@@ -661,7 +685,7 @@ fn add_trackpad_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Acceleration speed
     let accel_box = create_row();
-    add_label(&accel_box, "Acceleration speed:", 200);
+    add_label(&accel_box, &crate::i18n::t("Acceleration speed:", lang), 200);
     let accel_spin = SpinButton::new(
         Some(&Adjustment::new(0.0, -1.0, 1.0, 0.1, 0.2, 0.0)),
         0.1,
@@ -695,12 +719,12 @@ fn add_trackpad_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Acceleration profile with dropdown
     let profile_box = create_row();
-    add_label(&profile_box, "Acceleration profile:", 200);
+    add_label(&profile_box, &crate::i18n::t("Acceleration profile:", lang), 200);
 
     let profile_combo = ComboBoxText::new();
-    profile_combo.append(Some("adaptive"), "Adaptive");
-    profile_combo.append(Some("flat"), "Flat");
-    profile_combo.append(Some("custom"), "Custom...");
+    profile_combo.append(Some("adaptive"), &crate::i18n::t("Adaptive", lang));
+    profile_combo.append(Some("flat"), &crate::i18n::t("Flat", lang));
+    profile_combo.append(Some("custom"), &crate::i18n::t("Custom...", lang));
 
     let current_profile = config
         .borrow()
@@ -762,13 +786,13 @@ fn add_trackpad_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Click method with dropdown
     let click_box = create_row();
-    add_label(&click_box, "Click method:", 200);
+    add_label(&click_box, &crate::i18n::t("Click method:", lang), 200);
 
     let click_combo = ComboBoxText::new();
-    click_combo.append(Some("none"), "Device Default");
-    click_combo.append(Some("clickfinger"), "Clickfinger (1=L, 2=R, 3=M)");
-    click_combo.append(Some("button_areas"), "Button Areas (Bottom L/R)");
-    click_combo.append(Some("custom"), "Custom...");
+    click_combo.append(Some("none"), &crate::i18n::t("Device Default", lang));
+    click_combo.append(Some("clickfinger"), &crate::i18n::t("Clickfinger (1=L, 2=R, 3=M)", lang));
+    click_combo.append(Some("button_areas"), &crate::i18n::t("Button Areas (Bottom L/R)", lang));
+    click_combo.append(Some("custom"), &crate::i18n::t("Custom...", lang));
 
     let current_click = config
         .borrow()
@@ -830,17 +854,17 @@ fn add_trackpad_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     click_box.append(&click_entry);
     page.append(&click_box);
 
-    stack.add_titled(&page, Some("trackpad"), "Trackpad");
+    stack.add_titled(&page, Some("trackpad"), &crate::i18n::t("Trackpad", lang));
 }
 
-fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Mouse Settings");
+    add_header(&page, &crate::i18n::t("Mouse Settings", lang));
 
     // Acceleration speed
     let accel_box = create_row();
-    add_label(&accel_box, "Acceleration speed:", 200);
+    add_label(&accel_box, &crate::i18n::t("Acceleration speed:", lang), 200);
     let accel_spin = SpinButton::new(
         Some(&Adjustment::new(0.0, -1.0, 1.0, 0.1, 0.2, 0.0)),
         0.1,
@@ -874,12 +898,12 @@ fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Acceleration profile with dropdown
     let profile_box = create_row();
-    add_label(&profile_box, "Acceleration profile:", 200);
+    add_label(&profile_box, &crate::i18n::t("Acceleration profile:", lang), 200);
 
     let profile_combo = ComboBoxText::new();
-    profile_combo.append(Some("adaptive"), "Adaptive");
-    profile_combo.append(Some("flat"), "Flat");
-    profile_combo.append(Some("custom"), "Custom...");
+    profile_combo.append(Some("adaptive"), &crate::i18n::t("Adaptive", lang));
+    profile_combo.append(Some("flat"), &crate::i18n::t("Flat", lang));
+    profile_combo.append(Some("custom"), &crate::i18n::t("Custom...", lang));
 
     let current_profile = config
         .borrow()
@@ -941,7 +965,7 @@ fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Natural scroll
     let natural_box = create_row();
-    add_label(&natural_box, "Natural scroll:", 200);
+    add_label(&natural_box, &crate::i18n::t("Natural scroll:", lang), 200);
     let natural_switch = Switch::new();
     natural_switch.set_active(
         config
@@ -972,7 +996,7 @@ fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Snapped decoration resize
     let resize_snapped_box = create_row();
-    add_label(&resize_snapped_box, "Cluster-aware resize:", 200);
+    add_label(&resize_snapped_box, &crate::i18n::t("Cluster-aware resize:", lang), 200);
     let resize_snapped_switch = Switch::new();
     resize_snapped_switch.set_active(
         config
@@ -1003,7 +1027,7 @@ fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Snapped decoration fit
     let fit_snapped_box = create_row();
-    add_label(&fit_snapped_box, "Cluster-aware fit (maximize):", 200);
+    add_label(&fit_snapped_box, &crate::i18n::t("Cluster-aware fit (maximize):", lang), 200);
     let fit_snapped_switch = Switch::new();
     fit_snapped_switch.set_active(
         config
@@ -1032,23 +1056,23 @@ fn add_mouse_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     fit_snapped_box.append(&fit_snapped_switch);
     page.append(&fit_snapped_box);
 
-    stack.add_titled(&page, Some("mouse"), "Mouse");
+    stack.add_titled(&page, Some("mouse"), &crate::i18n::t("Mouse", lang));
 }
 
-fn add_cursor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_cursor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Cursor Settings");
+    add_header(&page, &crate::i18n::t("Cursor Settings", lang));
 
     // Theme
     let theme_box = create_row();
-    add_label(&theme_box, "Cursor theme:", 200);
+    add_label(&theme_box, &crate::i18n::t("Cursor theme:", lang), 200);
 
     let theme_combo = ComboBoxText::new();
-    theme_combo.append(Some("Adwaita"), "Adwaita (Default)");
-    theme_combo.append(Some("Yaru"), "Yaru");
-    theme_combo.append(Some("Breeze_Snow"), "Breeze Snow");
-    theme_combo.append(Some("custom"), "Custom...");
+    theme_combo.append(Some("Adwaita"), &crate::i18n::t("Adwaita (Default)", lang));
+    theme_combo.append(Some("Yaru"), &crate::i18n::t("Yaru", lang));
+    theme_combo.append(Some("Breeze_Snow"), &crate::i18n::t("Breeze Snow", lang));
+    theme_combo.append(Some("custom"), &crate::i18n::t("Custom...", lang));
 
     let current_theme = config
         .borrow()
@@ -1103,7 +1127,7 @@ fn add_cursor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Size
     let size_box = create_row();
-    add_label(&size_box, "Cursor size:", 200);
+    add_label(&size_box, &crate::i18n::t("Cursor size:", lang), 200);
     let size_spin = SpinButton::new(
         Some(&Adjustment::new(24.0, 16.0, 64.0, 1.0, 4.0, 0.0)),
         1.0,
@@ -1132,7 +1156,7 @@ fn add_cursor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Inactive opacity
     let opacity_box = create_row();
-    add_label(&opacity_box, "Inactive opacity:", 200);
+    add_label(&opacity_box, &crate::i18n::t("Inactive opacity:", lang), 200);
     let opacity_spin =
         SpinButton::new(Some(&Adjustment::new(0.5, 0.0, 1.0, 0.1, 0.2, 0.0)), 0.1, 1);
     opacity_spin.set_value(
@@ -1156,17 +1180,17 @@ fn add_cursor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     opacity_box.append(&opacity_spin);
     page.append(&opacity_box);
 
-    stack.add_titled(&page, Some("cursor"), "Cursor");
+    stack.add_titled(&page, Some("cursor"), &crate::i18n::t("Cursor", lang));
 }
 
-fn add_navigation_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_navigation_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Navigation Settings");
+    add_header(&page, &crate::i18n::t("Navigation Settings", lang));
 
     // Trackpad speed
     let trackpad_speed_box = create_row();
-    add_label(&trackpad_speed_box, "Trackpad speed:", 200);
+    add_label(&trackpad_speed_box, &crate::i18n::t("Trackpad speed:", lang), 200);
     let trackpad_speed_spin =
         SpinButton::new(Some(&Adjustment::new(1.5, 0.1, 5.0, 0.1, 0.5, 0.0)), 0.1, 1);
     trackpad_speed_spin.set_value(
@@ -1190,7 +1214,7 @@ fn add_navigation_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Mouse speed
     let mouse_speed_box = create_row();
-    add_label(&mouse_speed_box, "Mouse speed:", 200);
+    add_label(&mouse_speed_box, &crate::i18n::t("Mouse speed:", lang), 200);
     let mouse_speed_spin =
         SpinButton::new(Some(&Adjustment::new(1.0, 0.1, 5.0, 0.1, 0.5, 0.0)), 0.1, 1);
     mouse_speed_spin.set_value(
@@ -1214,7 +1238,7 @@ fn add_navigation_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Friction
     let friction_box = create_row();
-    add_label(&friction_box, "Friction:", 200);
+    add_label(&friction_box, &crate::i18n::t("Friction:", lang), 200);
     let friction_spin = SpinButton::new(
         Some(&Adjustment::new(0.94, 0.80, 0.99, 0.01, 0.05, 0.0)),
         0.01,
@@ -1241,7 +1265,7 @@ fn add_navigation_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Animation speed
     let anim_box = create_row();
-    add_label(&anim_box, "Animation speed:", 200);
+    add_label(&anim_box, &crate::i18n::t("Animation speed:", lang), 200);
     let anim_spin = SpinButton::new(
         Some(&Adjustment::new(0.3, 0.1, 1.0, 0.05, 0.1, 0.0)),
         0.05,
@@ -1268,7 +1292,7 @@ fn add_navigation_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Nudge step
     let nudge_box = create_row();
-    add_label(&nudge_box, "Nudge step (px):", 200);
+    add_label(&nudge_box, &crate::i18n::t("Nudge step (px):", lang), 200);
     let nudge_spin = SpinButton::new(
         Some(&Adjustment::new(20.0, 1.0, 100.0, 1.0, 10.0, 0.0)),
         1.0,
@@ -1295,7 +1319,7 @@ fn add_navigation_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Pan step
     let pan_box = create_row();
-    add_label(&pan_box, "Pan step (px):", 200);
+    add_label(&pan_box, &crate::i18n::t("Pan step (px):", lang), 200);
     let pan_spin = SpinButton::new(
         Some(&Adjustment::new(100.0, 10.0, 500.0, 10.0, 50.0, 0.0)),
         10.0,
@@ -1320,17 +1344,17 @@ fn add_navigation_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     pan_box.append(&pan_spin);
     page.append(&pan_box);
 
-    stack.add_titled(&page, Some("navigation"), "Navigation");
+    stack.add_titled(&page, Some("navigation"), &crate::i18n::t("Navigation", lang));
 }
 
-fn add_zoom_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_zoom_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Zoom Settings");
+    add_header(&page, &crate::i18n::t("Zoom Settings", lang));
 
     // Zoom step
     let step_box = create_row();
-    add_label(&step_box, "Zoom step:", 200);
+    add_label(&step_box, &crate::i18n::t("Zoom step:", lang), 200);
     let step_spin = SpinButton::new(
         Some(&Adjustment::new(1.1, 1.01, 2.0, 0.01, 0.1, 0.0)),
         0.01,
@@ -1359,7 +1383,7 @@ fn add_zoom_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Fit padding
     let padding_box = create_row();
-    add_label(&padding_box, "Fit padding (px):", 200);
+    add_label(&padding_box, &crate::i18n::t("Fit padding (px):", lang), 200);
     let padding_spin = SpinButton::new(
         Some(&Adjustment::new(100.0, 0.0, 500.0, 10.0, 50.0, 0.0)),
         10.0,
@@ -1388,7 +1412,7 @@ fn add_zoom_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Reset on new window
     let reset_new_box = create_row();
-    add_label(&reset_new_box, "Reset zoom on new window:", 200);
+    add_label(&reset_new_box, &crate::i18n::t("Reset zoom on new window:", lang), 200);
     let reset_new_switch = Switch::new();
     reset_new_switch.set_active(
         config
@@ -1398,7 +1422,7 @@ fn add_zoom_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|z| z.reset_on_new_window)
             .unwrap_or(true),
     );
-    reset_new_switch.set_tooltip_text(Some("Animate zoom to 1.0 when a new window is mapped"));
+    reset_new_switch.set_tooltip_text(Some(&crate::i18n::t("Animate zoom to 1.0 when a new window is mapped", lang)));
 
     let config_clone = config.clone();
     reset_new_switch.connect_state_set(move |_, state| {
@@ -1415,7 +1439,7 @@ fn add_zoom_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Reset on activation
     let reset_activation_box = create_row();
-    add_label(&reset_activation_box, "Reset zoom on activation:", 200);
+    add_label(&reset_activation_box, &crate::i18n::t("Reset zoom on activation:", lang), 200);
     let reset_activation_switch = Switch::new();
     reset_activation_switch.set_active(
         config
@@ -1442,17 +1466,17 @@ fn add_zoom_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     reset_activation_box.append(&reset_activation_switch);
     page.append(&reset_activation_box);
 
-    stack.add_titled(&page, Some("zoom"), "Zoom");
+    stack.add_titled(&page, Some("zoom"), &crate::i18n::t("Zoom", lang));
 }
 
-fn add_snap_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_snap_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Snap Settings");
+    add_header(&page, &crate::i18n::t("Snap Settings", lang));
 
     // Enabled
     let enabled_box = create_row();
-    add_label(&enabled_box, "Enable snapping:", 200);
+    add_label(&enabled_box, &crate::i18n::t("Enable snapping:", lang), 200);
     let enabled_switch = Switch::new();
     enabled_switch.set_active(
         config
@@ -1478,7 +1502,7 @@ fn add_snap_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Gap
     let gap_box = create_row();
-    add_label(&gap_box, "Gap (px):", 200);
+    add_label(&gap_box, &crate::i18n::t("Gap (px):", lang), 200);
     let gap_spin = SpinButton::new(
         Some(&Adjustment::new(12.0, 0.0, 100.0, 1.0, 10.0, 0.0)),
         1.0,
@@ -1507,7 +1531,7 @@ fn add_snap_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Distance
     let distance_box = create_row();
-    add_label(&distance_box, "Distance (px):", 200);
+    add_label(&distance_box, &crate::i18n::t("Distance (px):", lang), 200);
     let distance_spin = SpinButton::new(
         Some(&Adjustment::new(24.0, 1.0, 100.0, 1.0, 10.0, 0.0)),
         1.0,
@@ -1536,7 +1560,7 @@ fn add_snap_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Break force
     let break_box = create_row();
-    add_label(&break_box, "Break force (px):", 200);
+    add_label(&break_box, &crate::i18n::t("Break force (px):", lang), 200);
     let break_spin = SpinButton::new(
         Some(&Adjustment::new(32.0, 1.0, 100.0, 1.0, 10.0, 0.0)),
         1.0,
@@ -1565,7 +1589,7 @@ fn add_snap_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Same edge
     let same_edge_box = create_row();
-    add_label(&same_edge_box, "Snap same edges:", 200);
+    add_label(&same_edge_box, &crate::i18n::t("Snap same edges:", lang), 200);
     let same_edge_switch = Switch::new();
     same_edge_switch.set_active(
         config
@@ -1589,17 +1613,17 @@ fn add_snap_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     same_edge_box.append(&same_edge_switch);
     page.append(&same_edge_box);
 
-    stack.add_titled(&page, Some("snap"), "Snap");
+    stack.add_titled(&page, Some("snap"), &crate::i18n::t("Snap", lang));
 }
 
-fn add_decorations_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_decorations_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Window Decorations");
+    add_header(&page, &crate::i18n::t("Window Decorations", lang));
 
     // Background color
     let bg_box = create_row();
-    add_label(&bg_box, "Background color:", 200);
+    add_label(&bg_box, &crate::i18n::t("Background color:", lang), 200);
     let bg_entry = Entry::new();
     bg_entry.set_text(
         &config
@@ -1609,7 +1633,7 @@ fn add_decorations_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|d| d.bg_color.clone())
             .unwrap_or_else(|| "#303030".to_string()),
     );
-    bg_entry.set_placeholder_text(Some("#303030"));
+    bg_entry.set_placeholder_text(Some(&crate::i18n::t("#303030", lang)));
     bg_entry.set_hexpand(true);
 
     let config_clone = config.clone();
@@ -1626,7 +1650,7 @@ fn add_decorations_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Foreground color
     let fg_box = create_row();
-    add_label(&fg_box, "Foreground color:", 200);
+    add_label(&fg_box, &crate::i18n::t("Foreground color:", lang), 200);
     let fg_entry = Entry::new();
     fg_entry.set_text(
         &config
@@ -1636,7 +1660,7 @@ fn add_decorations_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|d| d.fg_color.clone())
             .unwrap_or_else(|| "#FFFFFF".to_string()),
     );
-    fg_entry.set_placeholder_text(Some("#FFFFFF"));
+    fg_entry.set_placeholder_text(Some(&crate::i18n::t("#FFFFFF", lang)));
     fg_entry.set_hexpand(true);
 
     let config_clone = config.clone();
@@ -1653,7 +1677,7 @@ fn add_decorations_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Corner radius
     let radius_box = create_row();
-    add_label(&radius_box, "Corner radius:", 200);
+    add_label(&radius_box, &crate::i18n::t("Corner radius:", lang), 200);
     let radius_spin = SpinButton::new(
         Some(&Adjustment::new(8.0, 0.0, 32.0, 1.0, 4.0, 0.0)),
         1.0,
@@ -1682,11 +1706,11 @@ fn add_decorations_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Default mode
     let mode_box = create_row();
-    add_label(&mode_box, "Default mode:", 200);
+    add_label(&mode_box, &crate::i18n::t("Default mode:", lang), 200);
     let mode_combo = ComboBoxText::new();
-    mode_combo.append(Some("client"), "Client (CSD)");
-    mode_combo.append(Some("borderless"), "Borderless (SSD)");
-    mode_combo.append(Some("none"), "None (SSD)");
+    mode_combo.append(Some("client"), &crate::i18n::t("Client (CSD)", lang));
+    mode_combo.append(Some("borderless"), &crate::i18n::t("Borderless (SSD)", lang));
+    mode_combo.append(Some("none"), &crate::i18n::t("None (SSD)", lang));
 
     let current_mode = config
         .borrow()
@@ -1710,27 +1734,28 @@ fn add_decorations_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     mode_box.append(&mode_combo);
     page.append(&mode_box);
 
-    stack.add_titled(&page, Some("decorations"), "Decorations");
+    stack.add_titled(&page, Some("decorations"), &crate::i18n::t("Decorations", lang));
 }
 
-fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Visual Effects");
+    add_header(&page, &crate::i18n::t("Visual Effects", lang));
 
     // Info section
-    let info_label = Label::new(Some(
+    let info_label = Label::new(Some(&crate::i18n::t(
         "Blur effects are applied to windows with blur enabled in window rules.\nHigher values increase blur quality but may impact performance.",
-    ));
+        lang,
+    )));
     info_label.set_halign(gtk4::Align::Start);
     info_label.add_css_class("dim-label");
     page.append(&info_label);
 
-    add_section_header(&page, "Blur Settings");
+    add_section_header(&page, &crate::i18n::t("Blur Settings", lang));
 
     // Blur radius
     let radius_box = create_row();
-    add_label(&radius_box, "Blur radius (passes):", 200);
+    add_label(&radius_box, &crate::i18n::t("Blur radius (passes):", lang), 200);
     let radius_spin = SpinButton::new(
         Some(&Adjustment::new(2.0, 0.0, 20.0, 1.0, 2.0, 0.0)),
         1.0,
@@ -1761,9 +1786,10 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     page.append(&radius_box);
 
     // Blur radius description
-    let radius_desc = Label::new(Some(
+    let radius_desc = Label::new(Some(&crate::i18n::t(
         "Controls blur intensity through multiple passes (0 = disabled, 2 = default, 10+ = very strong)",
-    ));
+        lang,
+    )));
     radius_desc.set_halign(gtk4::Align::Start);
     radius_desc.set_margin_start(200);
     radius_desc.add_css_class("dim-label");
@@ -1772,7 +1798,7 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Blur strength
     let strength_box = create_row();
-    add_label(&strength_box, "Blur strength (spread):", 200);
+    add_label(&strength_box, &crate::i18n::t("Blur strength (spread):", lang), 200);
     let strength_spin =
         SpinButton::new(Some(&Adjustment::new(1.1, 0.1, 5.0, 0.1, 0.5, 0.0)), 0.1, 2);
     strength_spin.set_value(
@@ -1800,9 +1826,10 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     page.append(&strength_box);
 
     // Blur strength description
-    let strength_desc = Label::new(Some(
+    let strength_desc = Label::new(Some(&crate::i18n::t(
         "Controls blur spread per pass (0.5 = tight, 1.1 = default, 3.0+ = very wide)",
-    ));
+        lang,
+    )));
     strength_desc.set_halign(gtk4::Align::Start);
     strength_desc.set_margin_start(200);
     strength_desc.add_css_class("dim-label");
@@ -1810,7 +1837,7 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     page.append(&strength_desc);
 
     // Presets section
-    add_section_header(&page, "Blur Presets");
+    add_section_header(&page, &crate::i18n::t("Blur Presets", lang));
 
     let presets_box = Box::new(Orientation::Horizontal, 12);
     presets_box.set_margin_top(6);
@@ -1819,12 +1846,12 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     presets_box.set_margin_end(12);
 
     // Preset buttons
-    let preset_none = Button::with_label("None (0, 0)");
-    let preset_light = Button::with_label("Light (1, 0.8)");
-    let preset_default = Button::with_label("Default (2, 1.1)");
-    let preset_medium = Button::with_label("Medium (4, 1.3)");
-    let preset_strong = Button::with_label("Strong (6, 1.5)");
-    let preset_extreme = Button::with_label("Extreme (10, 2.0)");
+    let preset_none = Button::with_label(&crate::i18n::t("None (0, 0)", lang));
+    let preset_light = Button::with_label(&crate::i18n::t("Light (1, 0.8)", lang));
+    let preset_default = Button::with_label(&crate::i18n::t("Default (2, 1.1)", lang));
+    let preset_medium = Button::with_label(&crate::i18n::t("Medium (4, 1.3)", lang));
+    let preset_strong = Button::with_label(&crate::i18n::t("Strong (6, 1.5)", lang));
+    let preset_extreme = Button::with_label(&crate::i18n::t("Extreme (10, 2.0)", lang));
 
     let radius_clone = radius_spin.clone();
     let strength_clone = strength_spin.clone();
@@ -1877,26 +1904,27 @@ fn add_effects_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     page.append(&presets_box);
 
     // Usage note
-    let usage_label = Label::new(Some(
+    let usage_label = Label::new(Some(&crate::i18n::t(
         "Note: To enable blur for specific windows, add window rules with blur = true and opacity < 1.0",
-    ));
+        lang,
+    )));
     usage_label.set_halign(gtk4::Align::Start);
     usage_label.set_margin_top(12);
     usage_label.add_css_class("dim-label");
     usage_label.add_css_class("caption");
     page.append(&usage_label);
 
-    stack.add_titled(&page, Some("effects"), "Effects");
+    stack.add_titled(&page, Some("effects"), &crate::i18n::t("Effects", lang));
 }
 
-fn add_background_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_background_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Background");
+    add_header(&page, &crate::i18n::t("Background", lang));
 
     // Shader path
     let shader_box = create_row();
-    add_label(&shader_box, "Shader path:", 200);
+    add_label(&shader_box, &crate::i18n::t("Shader path:", lang), 200);
     let shader_entry = Entry::new();
     shader_entry.set_text(
         &config
@@ -1906,7 +1934,7 @@ fn add_background_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|b| b.shader_path.clone())
             .unwrap_or_default(),
     );
-    shader_entry.set_placeholder_text(Some("~/.config/driftwm/bg.frag"));
+    shader_entry.set_placeholder_text(Some(&crate::i18n::t("~/.config/driftwm/bg.frag", lang)));
     shader_entry.set_hexpand(true);
 
     let config_clone = config.clone();
@@ -1923,7 +1951,7 @@ fn add_background_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
 
     // Tile path
     let tile_box = create_row();
-    add_label(&tile_box, "Tile path:", 200);
+    add_label(&tile_box, &crate::i18n::t("Tile path:", lang), 200);
     let tile_entry = Entry::new();
     tile_entry.set_text(
         &config
@@ -1933,7 +1961,7 @@ fn add_background_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             .and_then(|b| b.tile_path.clone())
             .unwrap_or_default(),
     );
-    tile_entry.set_placeholder_text(Some("~/.config/driftwm/tile.png"));
+    tile_entry.set_placeholder_text(Some(&crate::i18n::t("~/.config/driftwm/tile.png", lang)));
     tile_entry.set_hexpand(true);
 
     let config_clone = config.clone();
@@ -1952,7 +1980,7 @@ fn add_background_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     let shader_editor_box = Box::new(Orientation::Horizontal, 12);
     shader_editor_box.set_margin_top(24);
 
-    let shader_editor_btn = Button::with_label("Open Shader Editor →");
+    let shader_editor_btn = Button::with_label(&crate::i18n::t("Open Shader Editor →", lang));
     shader_editor_btn.add_css_class("suggested-action");
     shader_editor_btn.set_tooltip_text(Some(
         "Create custom animated backgrounds with visual controls",
@@ -1966,17 +1994,18 @@ fn add_background_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     shader_editor_box.append(&shader_editor_btn);
     page.append(&shader_editor_box);
 
-    stack.add_titled(&page, Some("background"), "Background");
+    stack.add_titled(&page, Some("background"), &crate::i18n::t("Background", lang));
 }
 
-fn add_window_rules_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_window_rules_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Window Rules");
+    add_header(&page, &crate::i18n::t("Window Rules", lang));
 
-    let info_label = Label::new(Some(
+    let info_label = Label::new(Some(&crate::i18n::t(
         "Configure per-window settings like blur, opacity, position, and decorations.\nFind app_id: cat $XDG_RUNTIME_DIR/driftwm/state",
-    ));
+        lang,
+    )));
     info_label.set_halign(gtk4::Align::Start);
     info_label.add_css_class("dim-label");
     page.append(&info_label);
@@ -1992,18 +2021,19 @@ fn add_window_rules_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     let existing_rules = config.borrow().window_rules.clone().unwrap_or_default();
 
     for (idx, rule) in existing_rules.iter().enumerate() {
-        add_window_rule_row(&rules_container, config.clone(), idx, rule.clone());
+        add_window_rule_row(&rules_container, config.clone(), idx, rule.clone(), lang);
     }
 
     page.append(&rules_container);
 
     // Add button
-    let add_button = Button::with_label("+ Add Window Rule");
+    let add_button = Button::with_label(&crate::i18n::t("+ Add Window Rule", lang));
     add_button.set_halign(gtk4::Align::Start);
     add_button.add_css_class("suggested-action");
 
     let rules_container_clone = rules_container.clone();
     let config_clone = config.clone();
+    let lang_clone = lang.to_string();
     add_button.connect_clicked(move |_| {
         let mut cfg = config_clone.borrow_mut();
         if cfg.window_rules.is_none() {
@@ -2014,12 +2044,12 @@ fn add_window_rules_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
         let idx = cfg.window_rules.as_ref().unwrap().len() - 1;
         drop(cfg);
 
-        add_window_rule_row(&rules_container_clone, config_clone.clone(), idx, new_rule);
+        add_window_rule_row(&rules_container_clone, config_clone.clone(), idx, new_rule, &lang_clone);
     });
 
     page.append(&add_button);
 
-    stack.add_titled(&page, Some("window_rules"), "Window Rules");
+    stack.add_titled(&page, Some("window_rules"), &crate::i18n::t("Window Rules", lang));
 }
 
 fn add_window_rule_row(
@@ -2027,6 +2057,7 @@ fn add_window_rule_row(
     config: Rc<RefCell<DriftwmConfig>>,
     idx: usize,
     rule: WindowRule,
+    lang: &str,
 ) {
     let rule_frame = gtk4::Frame::new(None);
     rule_frame.add_css_class("card");
@@ -2045,7 +2076,7 @@ fn add_window_rule_row(
     rule_label.set_hexpand(true);
     header_box.append(&rule_label);
 
-    let delete_btn = Button::with_label("Delete");
+    let delete_btn = Button::with_label(&crate::i18n::t("Delete", lang));
     delete_btn.add_css_class("destructive-action");
     let config_clone = config.clone();
     let frame_clone = rule_frame.clone();
@@ -2064,10 +2095,10 @@ fn add_window_rule_row(
 
     // App ID
     let app_id_box = create_row();
-    add_label(&app_id_box, "App ID:", 150);
+    add_label(&app_id_box, &crate::i18n::t("App ID:", lang), 150);
     let app_id_entry = Entry::new();
     app_id_entry.set_text(&rule.app_id.clone().unwrap_or_default());
-    app_id_entry.set_placeholder_text(Some("e.g., Alacritty, firefox"));
+    app_id_entry.set_placeholder_text(Some(&crate::i18n::t("e.g., Alacritty, firefox", lang)));
     app_id_entry.set_hexpand(true);
     let config_clone = config.clone();
     app_id_entry.connect_changed(move |entry| {
@@ -2084,10 +2115,10 @@ fn add_window_rule_row(
 
     // Title
     let title_box = create_row();
-    add_label(&title_box, "Title:", 150);
+    add_label(&title_box, &crate::i18n::t("Title:", lang), 150);
     let title_entry = Entry::new();
     title_entry.set_text(&rule.title.clone().unwrap_or_default());
-    title_entry.set_placeholder_text(Some("Window title (supports * glob)"));
+    title_entry.set_placeholder_text(Some(&crate::i18n::t("Window title (supports * glob)", lang)));
     title_entry.set_hexpand(true);
     let config_clone = config.clone();
     title_entry.connect_changed(move |entry| {
@@ -2104,10 +2135,10 @@ fn add_window_rule_row(
 
     // XClass
     let xclass_box = create_row();
-    add_label(&xclass_box, "X11 Class:", 150);
+    add_label(&xclass_box, &crate::i18n::t("X11 Class:", lang), 150);
     let xclass_entry = Entry::new();
     xclass_entry.set_text(&rule.xclass.clone().unwrap_or_default());
-    xclass_entry.set_placeholder_text(Some("WM_CLASS class (XWayland)"));
+    xclass_entry.set_placeholder_text(Some(&crate::i18n::t("WM_CLASS class (XWayland)", lang)));
     xclass_entry.set_hexpand(true);
     let config_clone = config.clone();
     xclass_entry.connect_changed(move |entry| {
@@ -2124,10 +2155,10 @@ fn add_window_rule_row(
 
     // XInstance
     let xinstance_box = create_row();
-    add_label(&xinstance_box, "X11 Instance:", 150);
+    add_label(&xinstance_box, &crate::i18n::t("X11 Instance:", lang), 150);
     let xinstance_entry = Entry::new();
     xinstance_entry.set_text(&rule.xinstance.clone().unwrap_or_default());
-    xinstance_entry.set_placeholder_text(Some("WM_CLASS instance (XWayland)"));
+    xinstance_entry.set_placeholder_text(Some(&crate::i18n::t("WM_CLASS instance (XWayland)", lang)));
     xinstance_entry.set_hexpand(true);
     let config_clone = config.clone();
     xinstance_entry.connect_changed(move |entry| {
@@ -2144,7 +2175,7 @@ fn add_window_rule_row(
 
     // Pass Keys
     let passkeys_box = create_row();
-    add_label(&passkeys_box, "Pass Keys:", 150);
+    add_label(&passkeys_box, &crate::i18n::t("Pass Keys:", lang), 150);
     let passkeys_entry = Entry::new();
     let initial_passkeys = match &rule.pass_keys {
         Some(PassKeysConfig::Boolean(b)) => b.to_string(),
@@ -2152,7 +2183,7 @@ fn add_window_rule_row(
         None => String::new(),
     };
     passkeys_entry.set_text(&initial_passkeys);
-    passkeys_entry.set_placeholder_text(Some("true/false or mod+q, ctrl+q"));
+    passkeys_entry.set_placeholder_text(Some(&crate::i18n::t("true/false or mod+q, ctrl+q", lang)));
     passkeys_entry.set_hexpand(true);
     let config_clone = config.clone();
     passkeys_entry.connect_changed(move |entry| {
@@ -2180,7 +2211,7 @@ fn add_window_rule_row(
 
     // Blur
     let blur_box = create_row();
-    add_label(&blur_box, "Enable blur:", 150);
+    add_label(&blur_box, &crate::i18n::t("Enable blur:", lang), 150);
     let blur_switch = Switch::new();
     blur_switch.set_active(rule.blur.unwrap_or(false));
     let config_clone = config.clone();
@@ -2198,7 +2229,7 @@ fn add_window_rule_row(
 
     // Opacity
     let opacity_box = create_row();
-    add_label(&opacity_box, "Opacity:", 150);
+    add_label(&opacity_box, &crate::i18n::t("Opacity:", lang), 150);
     let opacity_spin = SpinButton::new(
         Some(&Adjustment::new(1.0, 0.0, 1.0, 0.05, 0.1, 0.0)),
         0.05,
@@ -2219,12 +2250,12 @@ fn add_window_rule_row(
 
     // Decoration
     let decoration_box = create_row();
-    add_label(&decoration_box, "Decoration:", 150);
+    add_label(&decoration_box, &crate::i18n::t("Decoration:", lang), 150);
     let decoration_combo = ComboBoxText::new();
-    decoration_combo.append(Some("client"), "Client");
-    decoration_combo.append(Some("server"), "Server");
-    decoration_combo.append(Some("borderless"), "Borderless");
-    decoration_combo.append(Some("none"), "None (Bare)");
+    decoration_combo.append(Some("client"), &crate::i18n::t("Client", lang));
+    decoration_combo.append(Some("server"), &crate::i18n::t("Server", lang));
+    decoration_combo.append(Some("borderless"), &crate::i18n::t("Borderless", lang));
+    decoration_combo.append(Some("none"), &crate::i18n::t("None (Bare)", lang));
     if let Some(dec) = &rule.decoration {
         decoration_combo.set_active_id(Some(dec));
     }
@@ -2244,7 +2275,7 @@ fn add_window_rule_row(
 
     // Widget
     let widget_box = create_row();
-    add_label(&widget_box, "Widget (pinned):", 150);
+    add_label(&widget_box, &crate::i18n::t("Widget (pinned):", lang), 150);
     let widget_switch = Switch::new();
     widget_switch.set_active(rule.widget.unwrap_or(false));
     let config_clone = config.clone();
@@ -2264,12 +2295,12 @@ fn add_window_rule_row(
     container.append(&rule_frame);
 }
 
-fn add_autostart_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_autostart_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Autostart Programs");
+    add_header(&page, &crate::i18n::t("Autostart Programs", lang));
 
-    let info_label = Label::new(Some("Enter commands to run at startup (one per line):"));
+    let info_label = Label::new(Some(&crate::i18n::t("Enter commands to run at startup (one per line):", lang)));
     info_label.set_halign(gtk4::Align::Start);
     info_label.add_css_class("dim-label");
     page.append(&info_label);
@@ -2319,46 +2350,46 @@ fn add_autostart_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     scrolled.set_child(Some(&text_view));
     page.append(&scrolled);
 
-    stack.add_titled(&page, Some("autostart"), "Autostart");
+    stack.add_titled(&page, Some("autostart"), &crate::i18n::t("Autostart", lang));
 }
 
-fn add_backend_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_backend_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Backend Configuration");
+    add_header(&page, &crate::i18n::t("Backend Configuration", lang));
 
-    let info_label = Label::new(Some(
+    let info_label = Label::new(Some(&crate::i18n::t(
         "Hardware stability quirks. All default to false (opt-in).\nEnable these if you experience flickering, crashes, or rendering issues.\nParticularly useful on NVIDIA GPUs with proprietary drivers.",
-    ));
+        lang,
+    )));
     info_label.set_halign(gtk4::Align::Start);
     info_label.add_css_class("dim-label");
     page.append(&info_label);
 
-    let info_label2 = Label::new(Some(
+    let info_label2 = Label::new(Some(&crate::i18n::t(
         "Note: These flags must be set before launching driftwm. Changing them requires a restart.",
-    ));
+        lang,
+    )));
     info_label2.set_halign(gtk4::Align::Start);
     info_label2.add_css_class("dim-label");
     info_label2.add_css_class("caption");
     page.append(&info_label2);
 
-    add_section_header(&page, "Environment Variables");
+    add_section_header(&page, &crate::i18n::t("Environment Variables", lang));
 
-    let env_info = Label::new(Some(
+    let env_info = Label::new(Some(&crate::i18n::t(
         "For additional NVIDIA-specific settings, set these environment variables\nin your session wrapper script or shell profile before starting driftwm:\n\n  export SMITHAY_USE_LEGACY=1          # Use legacy DRM API instead of atomic modesetting\n  export __GL_GSYNC_ALLOWED=0\n  export __GL_VRR_ALLOWED=0\n  export __GL_MaxFramesAllowed=1\n  export NVD_BACKEND=direct",
-    ));
+        lang,
+    )));
     env_info.set_halign(gtk4::Align::Start);
     env_info.add_css_class("dim-label");
     env_info.set_selectable(true);
     page.append(&env_info);
 
-    add_section_header(&page, "Backend Settings");
+    add_section_header(&page, &crate::i18n::t("Backend Settings", lang));
 
     let wait_frame = add_switch_row(
-        &page,
-        "Wait for Frame Completion",
-        "Wait for GPU fences before page flip",
-        config
+        &page, &crate::i18n::t("Wait for Frame Completion", lang), &crate::i18n::t("Wait for GPU fences before page flip", lang), config
             .borrow()
             .backend
             .as_ref()
@@ -2377,10 +2408,7 @@ fn add_backend_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
     });
 
     let disable_scanout = add_switch_row(
-        &page,
-        "Disable Direct Scanout",
-        "Force EGL composition (disable direct scanout)",
-        config
+        &page, &crate::i18n::t("Disable Direct Scanout", lang), &crate::i18n::t("Force EGL composition (disable direct scanout)", lang), config
             .borrow()
             .backend
             .as_ref()
@@ -2398,17 +2426,18 @@ fn add_backend_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
         glib::Propagation::Proceed
     });
 
-    stack.add_titled(&page, Some("backend"), "Backend");
+    stack.add_titled(&page, Some("backend"), &crate::i18n::t("Backend", lang));
 }
 
-fn add_keybindings_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+fn add_keybindings_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Keybindings");
+    add_header(&page, &crate::i18n::t("Keybindings", lang));
 
-    let info_label = Label::new(Some(
+    let info_label = Label::new(Some(&crate::i18n::t(
         "Configure custom keyboard shortcuts. Click + to add new bindings.",
-    ));
+        lang,
+    )));
     info_label.set_halign(gtk4::Align::Start);
     info_label.add_css_class("dim-label");
     page.append(&info_label);
@@ -2425,25 +2454,27 @@ fn add_keybindings_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
             config.clone(),
             Some(key.clone()),
             Some(action.clone()),
+            lang,
         );
     }
 
     page.append(&bindings_box);
 
     // Add button
-    let add_button = Button::with_label("+ Add Keybinding");
+    let add_button = Button::with_label(&crate::i18n::t("+ Add Keybinding", lang));
     add_button.set_halign(gtk4::Align::Start);
     add_button.add_css_class("suggested-action");
 
     let bindings_box_clone = bindings_box.clone();
     let config_clone = config.clone();
+    let lang_clone = lang.to_string();
     add_button.connect_clicked(move |_| {
-        add_keybinding_row(&bindings_box_clone, config_clone.clone(), None, None);
+        add_keybinding_row(&bindings_box_clone, config_clone.clone(), None, None, &lang_clone);
     });
 
     page.append(&add_button);
 
-    stack.add_titled(&page, Some("keybindings"), "Keybindings");
+    stack.add_titled(&page, Some("keybindings"), &crate::i18n::t("Keybindings", lang));
 }
 
 fn add_keybinding_row(
@@ -2451,6 +2482,7 @@ fn add_keybinding_row(
     config: Rc<RefCell<DriftwmConfig>>,
     initial_key: Option<String>,
     initial_action: Option<String>,
+    lang: &str,
 ) {
     let row = Box::new(Orientation::Horizontal, 12);
     row.set_margin_top(6);
@@ -2458,15 +2490,15 @@ fn add_keybinding_row(
 
     // Key entry
     let key_entry = Entry::new();
-    key_entry.set_placeholder_text(Some("super+t"));
+    key_entry.set_placeholder_text(Some(&crate::i18n::t("super+t", lang)));
     key_entry.set_width_chars(20);
     if let Some(key) = initial_key.clone() {
         key_entry.set_text(&key);
     }
 
     // Record button
-    let record_button = Button::with_label("⏺");
-    record_button.set_tooltip_text(Some("Click and press keys to record"));
+    let record_button = Button::with_label(&crate::i18n::t("⏺", lang));
+    record_button.set_tooltip_text(Some(&crate::i18n::t("Click and press keys to record", lang)));
 
     let key_entry_clone = key_entry.clone();
     let record_button_clone = record_button.clone();
@@ -2537,14 +2569,14 @@ fn add_keybinding_row(
 
     // Action entry
     let action_entry = Entry::new();
-    action_entry.set_placeholder_text(Some("exec alacritty"));
+    action_entry.set_placeholder_text(Some(&crate::i18n::t("exec alacritty", lang)));
     action_entry.set_hexpand(true);
     if let Some(action) = initial_action.clone() {
         action_entry.set_text(&action);
     }
 
     // Remove button
-    let remove_button = Button::with_label("−");
+    let remove_button = Button::with_label(&crate::i18n::t("−", lang));
     remove_button.add_css_class("destructive-action");
 
     let row_clone = row.clone();
@@ -2622,4 +2654,110 @@ fn get_config_path() -> PathBuf {
     let config_home = std::env::var("XDG_CONFIG_HOME")
         .unwrap_or_else(|_| format!("{}/.config", std::env::var("HOME").unwrap()));
     PathBuf::from(config_home).join("driftwm/config.toml")
+}
+
+fn add_app_settings_page(stack: &Stack, lang: &str) {
+    let page = create_page();
+
+    add_header(&page, &crate::i18n::t("App Settings", lang));
+
+    // About section
+    let about_box = Box::new(Orientation::Vertical, 6);
+    about_box.set_margin_top(12);
+    about_box.set_margin_bottom(24);
+    
+    let title_label = Label::new(Some(&crate::i18n::t("driftwm-settings", lang)));
+    title_label.add_css_class("heading");
+    title_label.set_halign(gtk4::Align::Start);
+    about_box.append(&title_label);
+
+    let desc_label = Label::new(Some(&crate::i18n::t("A configuration tool for driftwm.", lang)));
+    desc_label.set_halign(gtk4::Align::Start);
+    about_box.append(&desc_label);
+
+    let author_label = Label::new(Some(&crate::i18n::t("Created by wwmaxik.", lang)));
+    author_label.set_halign(gtk4::Align::Start);
+    author_label.add_css_class("dim-label");
+    about_box.append(&author_label);
+
+    let github_link = gtk4::LinkButton::with_label("https://github.com/wwmaxik/driftwm-settings", &crate::i18n::t("GitHub Repository", lang));
+    github_link.set_halign(gtk4::Align::Start);
+    about_box.append(&github_link);
+
+    page.append(&about_box);
+
+    // Language section
+    add_section_header(&page, &crate::i18n::t("Language:", lang));
+
+    let lang_box = create_row();
+    
+    let lang_combo = gtk4::ComboBoxText::new();
+    lang_combo.append(Some("en"), &crate::i18n::t("English", lang));
+    lang_combo.append(Some("ru"), &crate::i18n::t("Русский", lang));
+    
+    lang_combo.set_active_id(Some(lang));
+
+    lang_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let mut settings = crate::app_config::AppSettings::load().unwrap_or_default();
+            settings.language = id.to_string();
+            let _ = settings.save();
+            
+            // Show a restart notice or just print to terminal
+            println!("Language changed to {}. Please restart the application to fully apply.", id);
+        }
+    });
+
+    lang_box.append(&lang_combo);
+    page.append(&lang_box);
+
+    // Theme section
+    add_section_header(&page, &crate::i18n::t("Theme:", lang));
+
+    let theme_box = create_row();
+    let theme_combo = gtk4::ComboBoxText::new();
+    theme_combo.append(Some("system"), &crate::i18n::t("System", lang));
+    theme_combo.append(Some("light"), &crate::i18n::t("Light", lang));
+    theme_combo.append(Some("dark"), &crate::i18n::t("Dark", lang));
+
+    let settings = crate::app_config::AppSettings::load().unwrap_or_default();
+    theme_combo.set_active_id(Some(&settings.theme));
+
+    theme_combo.connect_changed(move |combo| {
+        if let Some(id) = combo.active_id() {
+            let mut settings = crate::app_config::AppSettings::load().unwrap_or_default();
+            settings.theme = id.to_string();
+            let _ = settings.save();
+
+            if let Some(display) = gtk4::gdk::Display::default() {
+                let gtk_settings = gtk4::Settings::for_display(&display);
+                println!("Theme changed in UI to: {}", id);
+                match id.as_str() {
+                    "light" => {
+                        gtk_settings.set_property("gtk-application-prefer-dark-theme", false);
+                    }
+                    "dark" => {
+                        gtk_settings.set_property("gtk-application-prefer-dark-theme", true);
+                    }
+                    _ => {
+                        gtk_settings.reset_property("gtk-application-prefer-dark-theme");
+                    }
+                }
+            }
+        }
+    });
+
+    theme_box.append(&theme_combo);
+    page.append(&theme_box);
+
+    let notice_label = Label::new(Some(&crate::i18n::t("Requires restart to fully apply", lang)));
+    notice_label.set_halign(gtk4::Align::Start);
+    notice_label.add_css_class("dim-label");
+    notice_label.add_css_class("caption");
+    notice_label.set_margin_top(12);
+    page.append(&notice_label);
+
+    page.append(&lang_box);
+
+    stack.add_titled(&page, Some("app_settings"), &crate::i18n::t("App Settings", lang));
 }

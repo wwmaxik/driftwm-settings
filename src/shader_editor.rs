@@ -47,14 +47,15 @@ impl ShaderParams {
     }
 }
 
-pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>) {
+pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>, lang: &str) {
     let page = create_page();
 
-    add_header(&page, "Shader Editor");
+    add_header(&page, &crate::i18n::t("Shader Editor", lang));
 
-    let info_label = Label::new(Some(
+    let info_label = Label::new(Some(&crate::i18n::t(
         "Create custom animated backgrounds with visual controls. Switch to Raw mode for advanced editing.",
-    ));
+        lang,
+    )));
     info_label.set_halign(gtk4::Align::Start);
     info_label.add_css_class("dim-label");
     page.append(&info_label);
@@ -64,9 +65,9 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>)
     mode_box.set_margin_top(12);
     mode_box.set_margin_bottom(12);
 
-    let visual_mode_btn = Button::with_label("Visual Mode");
+    let visual_mode_btn = Button::with_label(&crate::i18n::t("Visual Mode", lang));
     visual_mode_btn.add_css_class("suggested-action");
-    let raw_mode_btn = Button::with_label("Raw Mode");
+    let raw_mode_btn = Button::with_label(&crate::i18n::t("Raw Mode", lang));
 
     mode_box.append(&visual_mode_btn);
     mode_box.append(&raw_mode_btn);
@@ -78,24 +79,24 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>)
     visual_container.set_margin_end(12);
 
     // Template selector
-    add_section_header(&visual_container, "Shader Template");
+    add_section_header(&visual_container, &crate::i18n::t("Shader Template", lang));
 
     let template_box = create_row();
-    add_label(&template_box, "Base Template:", 200);
+    add_label(&template_box, &crate::i18n::t("Base Template:", lang), 200);
     let template_combo = ComboBoxText::new();
-    template_combo.append(Some("gradient"), "Gradient");
-    template_combo.append(Some("waves"), "Animated Waves");
-    template_combo.append(Some("clouds"), "Clouds");
+    template_combo.append(Some("gradient"), &crate::i18n::t("Gradient", lang));
+    template_combo.append(Some("waves"), &crate::i18n::t("Animated Waves", lang));
+    template_combo.append(Some("clouds"), &crate::i18n::t("Clouds", lang));
     template_combo.set_active_id(Some("gradient"));
     template_box.append(&template_combo);
     visual_container.append(&template_box);
 
     // Color controls
-    add_section_header(&visual_container, "Colors");
+    add_section_header(&visual_container, &crate::i18n::t("Colors", lang));
 
     // Primary color
     let color1_box = create_row();
-    add_label(&color1_box, "Primary Color:", 200);
+    add_label(&color1_box, &crate::i18n::t("Primary Color:", lang), 200);
     let color1_r = SpinButton::new(
         Some(&Adjustment::new(0.2, 0.0, 1.0, 0.01, 0.1, 0.0)),
         0.01,
@@ -115,17 +116,17 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>)
     color1_g.set_width_chars(6);
     color1_b.set_width_chars(6);
 
-    color1_box.append(&Label::new(Some("R:")));
+    color1_box.append(&Label::new(Some(&crate::i18n::t("R:", lang))));
     color1_box.append(&color1_r);
-    color1_box.append(&Label::new(Some("G:")));
+    color1_box.append(&Label::new(Some(&crate::i18n::t("G:", lang))));
     color1_box.append(&color1_g);
-    color1_box.append(&Label::new(Some("B:")));
+    color1_box.append(&Label::new(Some(&crate::i18n::t("B:", lang))));
     color1_box.append(&color1_b);
     visual_container.append(&color1_box);
 
     // Secondary color
     let color2_box = create_row();
-    add_label(&color2_box, "Secondary Color:", 200);
+    add_label(&color2_box, &crate::i18n::t("Secondary Color:", lang), 200);
     let color2_r = SpinButton::new(
         Some(&Adjustment::new(0.1, 0.0, 1.0, 0.01, 0.1, 0.0)),
         0.01,
@@ -145,57 +146,58 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>)
     color2_g.set_width_chars(6);
     color2_b.set_width_chars(6);
 
-    color2_box.append(&Label::new(Some("R:")));
+    color2_box.append(&Label::new(Some(&crate::i18n::t("R:", lang))));
     color2_box.append(&color2_r);
-    color2_box.append(&Label::new(Some("G:")));
+    color2_box.append(&Label::new(Some(&crate::i18n::t("G:", lang))));
     color2_box.append(&color2_g);
-    color2_box.append(&Label::new(Some("B:")));
+    color2_box.append(&Label::new(Some(&crate::i18n::t("B:", lang))));
     color2_box.append(&color2_b);
     visual_container.append(&color2_box);
 
     // Animation controls
-    add_section_header(&visual_container, "Animation");
+    add_section_header(&visual_container, &crate::i18n::t("Animation", lang));
 
     let speed_box = create_row();
-    add_label(&speed_box, "Animation Speed:", 200);
+    add_label(&speed_box, &crate::i18n::t("Animation Speed:", lang), 200);
     let speed_spin = SpinButton::new(
         Some(&Adjustment::new(1.0, 0.0, 10.0, 0.1, 1.0, 0.0)),
         0.1,
         1,
     );
-    speed_spin.set_tooltip_text(Some("0 = static, 1 = normal, 10 = very fast"));
+    speed_spin.set_tooltip_text(Some(&crate::i18n::t("0 = static, 1 = normal, 10 = very fast", lang)));
     speed_box.append(&speed_spin);
     visual_container.append(&speed_box);
 
     let scale_box = create_row();
-    add_label(&scale_box, "Pattern Scale:", 200);
+    add_label(&scale_box, &crate::i18n::t("Pattern Scale:", lang), 200);
     let scale_spin = SpinButton::new(Some(&Adjustment::new(1.0, 0.1, 5.0, 0.1, 0.5, 0.0)), 0.1, 1);
-    scale_spin.set_tooltip_text(Some("Smaller = zoomed in, Larger = zoomed out"));
+    scale_spin.set_tooltip_text(Some(&crate::i18n::t("Smaller = zoomed in, Larger = zoomed out", lang)));
     scale_box.append(&scale_spin);
     visual_container.append(&scale_box);
 
     let complexity_box = create_row();
-    add_label(&complexity_box, "Complexity:", 200);
+    add_label(&complexity_box, &crate::i18n::t("Complexity:", lang), 200);
     let complexity_spin =
         SpinButton::new(Some(&Adjustment::new(3.0, 1.0, 8.0, 1.0, 1.0, 0.0)), 1.0, 0);
-    complexity_spin.set_tooltip_text(Some(
+    complexity_spin.set_tooltip_text(Some(&crate::i18n::t(
         "Number of detail layers (higher = more detailed but slower)",
-    ));
+        lang,
+    )));
     complexity_box.append(&complexity_spin);
     visual_container.append(&complexity_box);
 
     // Effects
-    add_section_header(&visual_container, "Effects");
+    add_section_header(&visual_container, &crate::i18n::t("Effects", lang));
 
     let vignette_box = create_row();
-    add_label(&vignette_box, "Vignette:", 200);
+    add_label(&vignette_box, &crate::i18n::t("Vignette:", lang), 200);
     let vignette_switch = Switch::new();
     vignette_switch.set_active(true);
     vignette_box.append(&vignette_switch);
     visual_container.append(&vignette_box);
 
     let glow_box = create_row();
-    add_label(&glow_box, "Glow Intensity:", 200);
+    add_label(&glow_box, &crate::i18n::t("Glow Intensity:", lang), 200);
     let glow_spin = SpinButton::new(
         Some(&Adjustment::new(0.1, 0.0, 1.0, 0.05, 0.1, 0.0)),
         0.05,
@@ -220,7 +222,7 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>)
     text_view.set_wrap_mode(gtk4::WrapMode::None);
 
     let buffer = text_view.buffer();
-    buffer.set_text("// Shader code will appear here when you switch to Raw mode");
+    buffer.set_text(&crate::i18n::t("// Shader code will appear here when you switch to Raw mode", lang));
 
     scrolled.set_child(Some(&text_view));
     raw_container.append(&scrolled);
@@ -259,11 +261,11 @@ pub fn add_shader_editor_page(stack: &Stack, config: Rc<RefCell<DriftwmConfig>>)
     let button_box = Box::new(Orientation::Horizontal, 12);
     button_box.set_margin_top(12);
 
-    setup_buttons(&button_box, &config, &visual_container, &buffer, &params);
+    setup_buttons(&button_box, &config, &visual_container, &buffer, &params, lang);
 
     page.append(&button_box);
 
-    stack.add_titled(&page, Some("shader_editor"), "Shader Editor");
+    stack.add_titled(&page, Some("shader_editor"), &crate::i18n::t("Shader Editor", lang));
 }
 
 fn setup_mode_switching(
@@ -311,9 +313,10 @@ fn setup_buttons(
     visual_container: &Box,
     buffer: &gtk4::TextBuffer,
     params: &Rc<ShaderParams>,
+    lang: &str,
 ) {
     // Generate & Save button
-    let save_shader_btn = Button::with_label("Generate & Save Shader");
+    let save_shader_btn = Button::with_label(&crate::i18n::t("Generate & Save Shader", lang));
     save_shader_btn.add_css_class("suggested-action");
 
     let buffer_clone = buffer.clone();
@@ -361,7 +364,7 @@ fn setup_buttons(
     button_box.append(&save_shader_btn);
 
     // Apply shader button
-    let apply_shader_btn = Button::with_label("Apply to Background");
+    let apply_shader_btn = Button::with_label(&crate::i18n::t("Apply to Background", lang));
     apply_shader_btn.add_css_class("suggested-action");
 
     let config_clone = config.clone();
