@@ -1,6 +1,10 @@
 # driftwm-settings
 
-## Next Update - 20.09.2026
+## Next Update - ±20.08.2026
+Note: The developer is currently on vacation until August 20, 2026.
+
+## Supported Versions
+driftwm versions up to 0.4.0 (inclusive) are fully supported.
 
 Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm) compositor.
 
