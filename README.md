@@ -1,5 +1,7 @@
 # driftwm-settings
 
+## Next Update - 20.09.2026
+
 Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm) compositor.
 
 ![CI](https://github.com/wwmaxik/driftwm-settings/workflows/CI/badge.svg)
