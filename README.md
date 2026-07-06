@@ -1,11 +1,5 @@
 # driftwm-settings
 
-## Next Update - ±20.08.2026
-Note: The developer is currently on vacation until August 20, 2026.
-
-## Supported Versions
-driftwm versions up to 0.4.0 (inclusive) are fully supported.
-
 Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm) compositor.
 
 ![CI](https://github.com/wwmaxik/driftwm-settings/workflows/CI/badge.svg)
@@ -13,6 +7,12 @@ Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm)
 ![Rust](https://img.shields.io/badge/rust-1.85%2B-orange)
 ![GTK](https://img.shields.io/badge/GTK-4-green)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
+
+## Next Update - ±20.08.2026
+Note: The developer is currently on vacation until August 20, 2026.
+
+## Supported Versions
+driftwm versions up to 0.4.0 (inclusive) are fully supported.
 
 ## Features
 
