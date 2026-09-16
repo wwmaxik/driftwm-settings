@@ -11,6 +11,8 @@ use config::DriftwmConfig;
 use std::path::PathBuf;
 use toml_edit::DocumentMut;
 use views::bookmarks::BookmarksState;
+use views::general::GeneralState;
+use views::keybindings::KeybindingsState;
 use views::Tab;
 
 use iced::widget::{button, column, container, row, scrollable, text};
@@ -43,7 +45,9 @@ struct App {
     config_path: PathBuf,
     settings: AppSettings,
     current_tab: Tab,
+    general_state: GeneralState,
     bookmarks_state: BookmarksState,
+    keybindings_state: KeybindingsState,
     status_banner: Option<(BannerKind, String)>,
 }
 
@@ -55,6 +59,8 @@ enum Message {
     Background(views::background::BackgroundMessage),
     Bookmarks(views::bookmarks::BookmarksMessage),
     Input(views::input::InputMessage),
+    Keybindings(views::keybindings::KeybindingsMessage),
+    Rules(views::rules::RulesMessage),
     Settings(views::settings::SettingsMessage),
     SaveConfig,
     ValidateConfig,
@@ -84,7 +90,9 @@ impl Default for App {
             config_path: path,
             settings,
             current_tab: Tab::General,
+            general_state: GeneralState::default(),
             bookmarks_state: BookmarksState::default(),
+            keybindings_state: KeybindingsState::default(),
             status_banner: None,
         }
     }
@@ -103,7 +111,7 @@ impl App {
                 self.current_tab = tab;
             }
             Message::General(msg) => {
-                views::general::update(&mut self.config, msg);
+                views::general::update(&mut self.config, &mut self.general_state, msg);
             }
             Message::Appearance(msg) => {
                 views::appearance::update(&mut self.config, msg);
@@ -116,6 +124,12 @@ impl App {
             }
             Message::Input(msg) => {
                 views::input::update(&mut self.config, msg);
+            }
+            Message::Keybindings(msg) => {
+                views::keybindings::update(&mut self.config, &mut self.keybindings_state, msg);
+            }
+            Message::Rules(msg) => {
+                views::rules::update(&mut self.config, msg);
             }
             Message::Settings(msg) => {
                 views::settings::update(&mut self.settings, msg);
@@ -298,6 +312,8 @@ impl App {
                 Tab::Background => icons::icon_background(icon_color, 16.0).into(),
                 Tab::Bookmarks => icons::icon_bookmarks(icon_color, 16.0).into(),
                 Tab::Input => icons::icon_input(icon_color, 16.0).into(),
+                Tab::Keybindings => icons::icon_hotkeys(icon_color, 16.0).into(),
+                Tab::Rules => icons::icon_rules(icon_color, 16.0).into(),
                 Tab::Settings => icons::icon_settings(icon_color, 16.0).into(),
             };
 
@@ -421,13 +437,17 @@ impl App {
         });
 
         let tab_content: Element<Message> = match self.current_tab {
-            Tab::General => views::general::view(&self.config, lang).map(Message::General),
+            Tab::General => views::general::view(&self.config, &self.general_state, lang).map(Message::General),
             Tab::Appearance => views::appearance::view(&self.config, lang).map(Message::Appearance),
             Tab::Background => views::background::view(&self.config, lang).map(Message::Background),
             Tab::Bookmarks => {
                 views::bookmarks::view(&self.config, &self.bookmarks_state, lang).map(Message::Bookmarks)
             }
             Tab::Input => views::input::view(&self.config, lang).map(Message::Input),
+            Tab::Keybindings => {
+                views::keybindings::view(&self.config, &self.keybindings_state, lang).map(Message::Keybindings)
+            }
+            Tab::Rules => views::rules::view(&self.config, lang).map(Message::Rules),
             Tab::Settings => views::settings::view(&self.settings).map(Message::Settings),
         };
 

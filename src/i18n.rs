@@ -74,6 +74,20 @@ impl Language {
         }
     }
 
+    pub fn tab_keybindings(&self) -> &'static str {
+        match self {
+            Language::English => "Hotkeys & Actions",
+            Language::Russian => "Горячие клавиши",
+        }
+    }
+
+    pub fn tab_rules(&self) -> &'static str {
+        match self {
+            Language::English => "Window Rules",
+            Language::Russian => "Правила окон",
+        }
+    }
+
     pub fn tab_settings(&self) -> &'static str {
         match self {
             Language::English => "App Settings",
@@ -391,6 +405,183 @@ impl Language {
         match self {
             Language::English => "Delete",
             Language::Russian => "Удалить",
+        }
+    }
+
+    // Keybindings tab
+    pub fn keybindings_heading(&self) -> &'static str {
+        match self {
+            Language::English => "Keyboard Shortcuts & Actions",
+            Language::Russian => "Горячие клавиши и действия",
+        }
+    }
+
+    pub fn keybindings_desc(&self) -> &'static str {
+        match self {
+            Language::English => "Map keyboard chords to window actions, commands, navigation, and scripts.",
+            Language::Russian => "Настройка сочетаний клавиш для управления окнами, командами, навигацией и скриптами.",
+        }
+    }
+
+    pub fn search_keybindings(&self) -> &'static str {
+        match self {
+            Language::English => "Search shortcuts or actions...",
+            Language::Russian => "Поиск клавиш или действий...",
+        }
+    }
+
+    pub fn add_keybinding(&self) -> &'static str {
+        match self {
+            Language::English => "+ Add Keybinding",
+            Language::Russian => "+ Добавить горячую клавишу",
+        }
+    }
+
+    pub fn populate_defaults(&self) -> &'static str {
+        match self {
+            Language::English => "Load Standard Defaults",
+            Language::Russian => "Загрузить стандартные бинды",
+        }
+    }
+
+    pub fn shortcut_key_header(&self) -> &'static str {
+        match self {
+            Language::English => "Key Combination",
+            Language::Russian => "Сочетание клавиш",
+        }
+    }
+
+    pub fn shortcut_action_header(&self) -> &'static str {
+        match self {
+            Language::English => "Action / Command",
+            Language::Russian => "Действие / Команда",
+        }
+    }
+
+    pub fn unbind(&self) -> &'static str {
+        match self {
+            Language::English => "Unbind",
+            Language::Russian => "Отвязать",
+        }
+    }
+
+    pub fn disable_defaults_heading(&self) -> &'static str {
+        match self {
+            Language::English => "Disable Built-in Defaults",
+            Language::Russian => "Отключение стандартных биндов",
+        }
+    }
+
+    pub fn disable_keys_label(&self) -> &'static str {
+        match self {
+            Language::English => "Disable default keyboard shortcuts (keys)",
+            Language::Russian => "Отключить стандартные клавиши (keys)",
+        }
+    }
+
+    pub fn disable_mouse_label(&self) -> &'static str {
+        match self {
+            Language::English => "Disable default mouse bindings (mouse)",
+            Language::Russian => "Отключить стандартную мышь (mouse)",
+        }
+    }
+
+    pub fn disable_gestures_label(&self) -> &'static str {
+        match self {
+            Language::English => "Disable default touchpad gestures (gestures)",
+            Language::Russian => "Отключить стандартные жесты тачпада (gestures)",
+        }
+    }
+
+    pub fn disable_touch_label(&self) -> &'static str {
+        match self {
+            Language::English => "Disable default touchscreen gestures (touch)",
+            Language::Russian => "Отключить стандартные жесты экрана (touch)",
+        }
+    }
+
+    // Rules tab
+    pub fn rules_heading(&self) -> &'static str {
+        match self {
+            Language::English => "Window Rules",
+            Language::Russian => "Правила для окон",
+        }
+    }
+
+    pub fn rules_desc(&self) -> &'static str {
+        match self {
+            Language::English => "Configure custom behaviors, opacity, borders, and placement per application or window title.",
+            Language::Russian => "Правила для отдельных приложений или заголовков (прозрачность, рамки, PiP, геометрия).",
+        }
+    }
+
+    pub fn add_rule(&self) -> &'static str {
+        match self {
+            Language::English => "+ Add Window Rule",
+            Language::Russian => "+ Добавить правило",
+        }
+    }
+
+    pub fn rule_app_id(&self) -> &'static str {
+        match self {
+            Language::English => "App ID (exact, glob*, /regex/):",
+            Language::Russian => "Идентификатор App ID (точно, glob*, /regex/):",
+        }
+    }
+
+    pub fn rule_title(&self) -> &'static str {
+        match self {
+            Language::English => "Window Title:",
+            Language::Russian => "Заголовок окна:",
+        }
+    }
+
+    pub fn rule_decoration(&self) -> &'static str {
+        match self {
+            Language::English => "Decoration Mode:",
+            Language::Russian => "Режим декораций:",
+        }
+    }
+
+    pub fn rule_opacity(&self) -> &'static str {
+        match self {
+            Language::English => "Opacity (0.0 - 1.0):",
+            Language::Russian => "Непрозрачность (0.0 - 1.0):",
+        }
+    }
+
+    pub fn rule_blur(&self) -> &'static str {
+        match self {
+            Language::English => "Blur backdrop behind window",
+            Language::Russian => "Размытие фона под окном",
+        }
+    }
+
+    pub fn rule_pinned(&self) -> &'static str {
+        match self {
+            Language::English => "Pin to screen (PiP float, ignores pan/zoom)",
+            Language::Russian => "Закрепить на экране (PiP, поверх всех, не скроллится)",
+        }
+    }
+
+    pub fn rule_widget(&self) -> &'static str {
+        match self {
+            Language::English => "Widget (immovable background surface)",
+            Language::Russian => "Виджет (неподвижное фоновое окно)",
+        }
+    }
+
+    pub fn rule_fullscreen(&self) -> &'static str {
+        match self {
+            Language::English => "Start in Fullscreen",
+            Language::Russian => "Запуск на весь экран",
+        }
+    }
+
+    pub fn rule_focus_on_open(&self) -> &'static str {
+        match self {
+            Language::English => "Focus camera on open",
+            Language::Russian => "Фокусировать камеру при создании",
         }
     }
 }

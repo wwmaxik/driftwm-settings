@@ -247,6 +247,8 @@ pub fn input_style(_theme: &Theme, status: text_input::Status) -> text_input::St
     }
 }
 
+pub use input_style as text_input_style;
+
 /// Dropdown pick list style
 pub fn pick_list_style(_theme: &Theme, status: pick_list::Status) -> pick_list::Style {
     let border_color = match status {

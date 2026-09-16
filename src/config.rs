@@ -33,6 +33,15 @@ pub struct DriftwmConfig {
     pub session: SessionConfig,
 
     #[serde(default)]
+    pub bindings: BindingsConfig,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keybindings: Option<HashMap<String, String>>,
+
+    #[serde(default)]
+    pub xwayland: XwaylandConfig,
+
+    #[serde(default)]
     pub input: InputConfig,
 
     #[serde(default)]
@@ -79,6 +88,27 @@ pub struct SessionConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub restore_bookmarks: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct BindingsConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disable_defaults: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct XwaylandConfig {
+    pub enabled: Option<bool>,
+    pub path: Option<String>,
+}
+
+impl Default for XwaylandConfig {
+    fn default() -> Self {
+        Self {
+            enabled: Some(true),
+            path: Some("xwayland-satellite".to_string()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -672,7 +702,70 @@ impl DriftwmConfig {
             autostart: Some(vec![]),
             env: Some(HashMap::new()),
             window_rules: Some(vec![]),
+            bindings: BindingsConfig::default(),
+            keybindings: Some(Self::default_keybindings()),
+            xwayland: XwaylandConfig::default(),
         }
+    }
+
+    /// Default built-in keybindings for driftwm 0.19+
+    pub fn default_keybindings() -> HashMap<String, String> {
+        HashMap::from([
+            ("mod+return".to_string(), "exec-terminal".to_string()),
+            ("mod+d".to_string(), "exec-launcher".to_string()),
+            ("mod+q".to_string(), "close-window".to_string()),
+            ("mod+e".to_string(), "toggle-cursor-pan".to_string()),
+            ("mod+f".to_string(), "toggle-fullscreen".to_string()),
+            ("mod+m".to_string(), "fit-window".to_string()),
+            ("mod+shift+m".to_string(), "fit-window-snapped".to_string()),
+            ("mod+t".to_string(), "toggle-pin-to-screen".to_string()),
+            ("mod+c".to_string(), "center-window".to_string()),
+            ("mod+x".to_string(), "focus-center".to_string()),
+            ("mod+a".to_string(), "home-toggle".to_string()),
+            ("mod+up".to_string(), "center-nearest up".to_string()),
+            ("mod+down".to_string(), "center-nearest down".to_string()),
+            ("mod+left".to_string(), "center-nearest left".to_string()),
+            ("mod+right".to_string(), "center-nearest right".to_string()),
+            ("mod+shift+up".to_string(), "nudge-window up".to_string()),
+            ("mod+shift+down".to_string(), "nudge-window down".to_string()),
+            ("mod+shift+left".to_string(), "nudge-window left".to_string()),
+            ("mod+shift+right".to_string(), "nudge-window right".to_string()),
+            ("mod+ctrl+up".to_string(), "pan-viewport up".to_string()),
+            ("mod+ctrl+down".to_string(), "pan-viewport down".to_string()),
+            ("mod+ctrl+left".to_string(), "pan-viewport left".to_string()),
+            ("mod+ctrl+right".to_string(), "pan-viewport right".to_string()),
+            ("alt+tab".to_string(), "cycle-windows forward".to_string()),
+            ("alt+shift+tab".to_string(), "cycle-windows backward".to_string()),
+            ("mod+equal".to_string(), "zoom-in".to_string()),
+            ("mod+minus".to_string(), "zoom-out".to_string()),
+            ("mod+0".to_string(), "zoom-reset".to_string()),
+            ("mod+z".to_string(), "zoom-reset".to_string()),
+            ("mod+w".to_string(), "zoom-to-fit".to_string()),
+            ("mod+shift+w".to_string(), "zoom-to-fit-snapped".to_string()),
+            ("mod+1".to_string(), "go-to-bookmark 1".to_string()),
+            ("mod+2".to_string(), "go-to-bookmark 2".to_string()),
+            ("mod+3".to_string(), "go-to-bookmark 3".to_string()),
+            ("mod+4".to_string(), "go-to-bookmark 4".to_string()),
+            ("mod+shift+1".to_string(), "set-bookmark 1".to_string()),
+            ("mod+shift+2".to_string(), "set-bookmark 2".to_string()),
+            ("mod+shift+3".to_string(), "set-bookmark 3".to_string()),
+            ("mod+shift+4".to_string(), "set-bookmark 4".to_string()),
+            ("mod+alt+up".to_string(), "send-to-output up".to_string()),
+            ("mod+alt+down".to_string(), "send-to-output down".to_string()),
+            ("mod+alt+left".to_string(), "send-to-output left".to_string()),
+            ("mod+alt+right".to_string(), "send-to-output right".to_string()),
+            ("mod+ctrl+shift+q".to_string(), "quit".to_string()),
+            ("Print".to_string(), "spawn grim - | wl-copy".to_string()),
+            ("shift+Print".to_string(), "spawn grim -g \"$(slurp -d)\" - | wl-copy".to_string()),
+            ("XF86AudioRaiseVolume".to_string(), "spawn wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+".to_string()),
+            ("XF86AudioLowerVolume".to_string(), "spawn wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-".to_string()),
+            ("XF86AudioMute".to_string(), "spawn wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle".to_string()),
+            ("XF86MonBrightnessUp".to_string(), "spawn brightnessctl set +5%".to_string()),
+            ("XF86MonBrightnessDown".to_string(), "spawn brightnessctl set 5%-".to_string()),
+            ("XF86AudioPlay".to_string(), "spawn playerctl play-pause".to_string()),
+            ("XF86AudioNext".to_string(), "spawn playerctl next".to_string()),
+            ("XF86AudioPrev".to_string(), "spawn playerctl previous".to_string()),
+        ])
     }
 
     /// Create default template DocumentMut with helpful section comments
@@ -945,6 +1038,175 @@ left_handed = false
         set_opt_str(cur, "theme", &self.cursor.theme);
         set_opt_i64(cur, "size", self.cursor.size.map(|v| v as i64));
         set_opt_f64(cur, "inactive_opacity", self.cursor.inactive_opacity);
+
+        // Autostart
+        if let Some(autostart) = &self.autostart {
+            if !autostart.is_empty() {
+                let mut arr = Array::new();
+                for cmd in autostart {
+                    arr.push(cmd.clone());
+                }
+                doc["autostart"] = Item::Value(Value::Array(arr));
+            } else {
+                doc.as_table_mut().remove("autostart");
+            }
+        }
+
+        // Environment variables
+        if let Some(env_map) = &self.env {
+            if !env_map.is_empty() {
+                let env_tbl = ensure_table(doc, "env");
+                env_tbl.clear();
+                let mut keys: Vec<_> = env_map.keys().collect();
+                keys.sort();
+                for k in keys {
+                    if let Some(v) = env_map.get(k) {
+                        env_tbl[k] = Item::Value(Value::from(v.clone()));
+                    }
+                }
+            } else {
+                doc.as_table_mut().remove("env");
+            }
+        }
+
+        // Bindings (disable_defaults)
+        if let Some(dis) = &self.bindings.disable_defaults {
+            if !dis.is_empty() {
+                let bindings_tbl = ensure_table(doc, "bindings");
+                let mut arr = Array::new();
+                for s in dis {
+                    arr.push(s.clone());
+                }
+                bindings_tbl["disable_defaults"] = Item::Value(Value::Array(arr));
+            } else if doc.contains_table("bindings") {
+                doc["bindings"].as_table_mut().unwrap().remove("disable_defaults");
+                if doc["bindings"].as_table_mut().unwrap().is_empty() {
+                    doc.as_table_mut().remove("bindings");
+                }
+            }
+        }
+
+        // Keybindings
+        if let Some(kb) = &self.keybindings {
+            let kb_tbl = ensure_table(doc, "keybindings");
+            kb_tbl.clear();
+            let mut keys: Vec<_> = kb.keys().collect();
+            keys.sort();
+            for k in keys {
+                if let Some(v) = kb.get(k) {
+                    kb_tbl[k] = Item::Value(Value::from(v.clone()));
+                }
+            }
+        }
+
+        // Xwayland
+        let xw = ensure_table(doc, "xwayland");
+        set_opt_bool(xw, "enabled", self.xwayland.enabled);
+        set_opt_str(xw, "path", &self.xwayland.path);
+
+        // Backend
+        if self.backend.wait_for_frame_completion.is_some()
+            || self.backend.disable_direct_scanout.is_some()
+            || self.backend.disable_hardware_cursor.is_some()
+            || self.backend.max_capture_fps.is_some()
+        {
+            let be = ensure_table(doc, "backend");
+            set_opt_bool(be, "wait_for_frame_completion", self.backend.wait_for_frame_completion);
+            set_opt_bool(be, "disable_direct_scanout", self.backend.disable_direct_scanout);
+            set_opt_bool(be, "disable_hardware_cursor", self.backend.disable_hardware_cursor);
+            set_opt_i64(be, "max_capture_fps", self.backend.max_capture_fps.map(|v| v as i64));
+        }
+
+        // Window Rules
+        if let Some(rules) = &self.window_rules {
+            doc.as_table_mut().remove("window_rules");
+            if !rules.is_empty() {
+                let mut aot = toml_edit::ArrayOfTables::new();
+                for r in rules {
+                    let mut t = Table::new();
+                    if let Some(app_id) = &r.app_id {
+                        if !app_id.is_empty() {
+                            t["app_id"] = Item::Value(Value::from(app_id.clone()));
+                        }
+                    }
+                    if let Some(title) = &r.title {
+                        if !title.is_empty() {
+                            t["title"] = Item::Value(Value::from(title.clone()));
+                        }
+                    }
+                    if r.pinned_to_screen {
+                        t["pinned_to_screen"] = Item::Value(Value::from(true));
+                    }
+                    if r.widget {
+                        t["widget"] = Item::Value(Value::from(true));
+                    }
+                    if let Some(fs) = r.fullscreen {
+                        t["fullscreen"] = Item::Value(Value::from(fs));
+                    }
+                    if let Some(f) = r.focus_on_open {
+                        t["focus_on_open"] = Item::Value(Value::from(f));
+                    }
+                    if let Some(s) = r.suspend_on_close {
+                        t["suspend_on_close"] = Item::Value(Value::from(s));
+                    }
+                    if let Some(rw) = r.restore_windows {
+                        t["restore_windows"] = Item::Value(Value::from(rw));
+                    }
+                    if r.preserve_aspect_ratio {
+                        t["preserve_aspect_ratio"] = Item::Value(Value::from(true));
+                    }
+                    if let Some(d) = &r.decoration {
+                        if !d.is_empty() && d != "default" {
+                            t["decoration"] = Item::Value(Value::from(d.clone()));
+                        }
+                    }
+                    if let Some(b) = r.blur {
+                        t["blur"] = Item::Value(Value::from(b));
+                    }
+                    if let Some(op) = r.opacity {
+                        t["opacity"] = Item::Value(Value::from(op));
+                    }
+                    if let Some(bw) = r.border_width {
+                        t["border_width"] = Item::Value(Value::from(bw as i64));
+                    }
+                    if let Some(bc) = &r.border_color {
+                        if !bc.is_empty() {
+                            t["border_color"] = Item::Value(Value::from(bc.clone()));
+                        }
+                    }
+                    if let Some(bcf) = &r.border_color_focused {
+                        if !bcf.is_empty() {
+                            t["border_color_focused"] = Item::Value(Value::from(bcf.clone()));
+                        }
+                    }
+                    if let Some(cr) = r.corner_radius {
+                        t["corner_radius"] = Item::Value(Value::from(cr as i64));
+                    }
+                    if let Some(sh) = r.shadow {
+                        t["shadow"] = Item::Value(Value::from(sh));
+                    }
+                    if let Some(out) = &r.output {
+                        if !out.is_empty() {
+                            t["output"] = Item::Value(Value::from(out.clone()));
+                        }
+                    }
+                    if let Some(pos) = r.position {
+                        let mut arr = Array::new();
+                        arr.push(pos[0] as i64);
+                        arr.push(pos[1] as i64);
+                        t["position"] = Item::Value(Value::Array(arr));
+                    }
+                    if let Some(sz) = r.size {
+                        let mut arr = Array::new();
+                        arr.push(sz[0] as i64);
+                        arr.push(sz[1] as i64);
+                        t["size"] = Item::Value(Value::Array(arr));
+                    }
+                    aot.push(t);
+                }
+                doc["window_rules"] = Item::ArrayOfTables(aot);
+            }
+        }
     }
 }
 
@@ -1031,14 +1293,14 @@ mod tests {
         let initial_toml = r#"# User header comment
 mod_key = "alt" # inline comment
 
-# My custom keybindings table that settings shouldn't erase
-[keybindings]
-"mod+t" = "exec-terminal"
-"mod+q" = "close-window"
+# My custom section that settings shouldn't erase
+[custom_scripts]
+backup = "rsync -av ~/ /backup"
 "#;
 
         let mut doc: DocumentMut = initial_toml.parse().expect("valid toml");
         let mut cfg = DriftwmConfig::default_with_presets();
+        cfg.keybindings = None; // simulate unmanaged
         cfg.mod_key = Some("super".to_string());
         cfg.window_placement = Some("auto".to_string());
         cfg.snap.gap = Some(16.0);
@@ -1048,16 +1310,60 @@ mod_key = "alt" # inline comment
 
         // 1. Comments preserved
         assert!(output.contains("# User header comment"));
-        assert!(output.contains("# My custom keybindings table"));
+        assert!(output.contains("# My custom section"));
 
         // 2. Custom unmanaged table preserved
-        assert!(output.contains("[keybindings]"));
-        assert!(output.contains("\"mod+t\" = \"exec-terminal\""));
+        assert!(output.contains("[custom_scripts]"));
+        assert!(output.contains("backup = \"rsync -av ~/ /backup\""));
 
         // 3. Updated values reflected
         assert!(output.contains("mod_key = \"super\""));
         assert!(output.contains("window_placement = \"auto\""));
         assert!(output.contains("gap = 16.0"));
+    }
+
+    #[test]
+    fn test_keybindings_and_rules_sync() {
+        let mut doc = DocumentMut::new();
+        let mut cfg = DriftwmConfig::default_with_presets();
+        cfg.keybindings = Some(HashMap::from([
+            ("mod+return".to_string(), "exec-terminal".to_string()),
+            ("mod+q".to_string(), "close-window".to_string()),
+        ]));
+        cfg.window_rules = Some(vec![WindowRule {
+            app_id: Some("org.wezfurlong.wezterm".to_string()),
+            title: None,
+            opacity: Some(0.9),
+            blur: Some(true),
+            widget: false,
+            pinned_to_screen: false,
+            fullscreen: None,
+            focus_on_open: None,
+            suspend_on_close: None,
+            restore_windows: None,
+            preserve_aspect_ratio: false,
+            decoration: Some("client".to_string()),
+            border_width: Some(2),
+            border_color: Some("#5c5c5c".to_string()),
+            border_color_focused: Some("#b4befe".to_string()),
+            corner_radius: Some(8),
+            shadow: Some(true),
+            output: None,
+            position: None,
+            size: None,
+            layer_order: None,
+        }]);
+
+        cfg.apply_to_document(&mut doc);
+        let output = doc.to_string();
+
+        assert!(output.contains("[keybindings]"));
+        assert!(output.contains("\"mod+return\" = \"exec-terminal\""));
+        assert!(output.contains("\"mod+q\" = \"close-window\""));
+        assert!(output.contains("[[window_rules]]"));
+        assert!(output.contains("app_id = \"org.wezfurlong.wezterm\""));
+        assert!(output.contains("opacity = 0.9"));
+        assert!(output.contains("blur = true"));
     }
 
     #[test]

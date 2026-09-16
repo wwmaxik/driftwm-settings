@@ -3,6 +3,8 @@ pub mod background;
 pub mod bookmarks;
 pub mod general;
 pub mod input;
+pub mod keybindings;
+pub mod rules;
 pub mod settings;
 
 use crate::i18n::Language;
@@ -14,16 +16,20 @@ pub enum Tab {
     Background,
     Bookmarks,
     Input,
+    Keybindings,
+    Rules,
     Settings,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 6] = [
+    pub const ALL: [Tab; 8] = [
         Tab::General,
         Tab::Appearance,
         Tab::Background,
         Tab::Bookmarks,
         Tab::Input,
+        Tab::Keybindings,
+        Tab::Rules,
         Tab::Settings,
     ];
 
@@ -34,6 +40,8 @@ impl Tab {
             Tab::Background => lang.tab_background(),
             Tab::Bookmarks => lang.tab_bookmarks(),
             Tab::Input => lang.tab_input(),
+            Tab::Keybindings => lang.tab_keybindings(),
+            Tab::Rules => lang.tab_rules(),
             Tab::Settings => lang.tab_settings(),
         }
     }
