@@ -88,6 +88,13 @@ impl Language {
         }
     }
 
+    pub fn tab_shader_studio(&self) -> &'static str {
+        match self {
+            Language::English => "Shader Studio",
+            Language::Russian => "Студия шейдеров",
+        }
+    }
+
     pub fn tab_settings(&self) -> &'static str {
         match self {
             Language::English => "App Settings",
@@ -582,6 +589,154 @@ impl Language {
         match self {
             Language::English => "Focus camera on open",
             Language::Russian => "Фокусировать камеру при создании",
+        }
+    }
+
+    // Shader Studio
+    pub fn shader_studio_desc(&self) -> &'static str {
+        match self {
+            Language::English => "Interactive GLSL wallpaper generator: tweak parameters live, preview in real time, and apply directly to driftwm.",
+            Language::Russian => "Интерактивный генератор процедурных GLSL-обоев: изменяйте параметры, смотрите результат в реальном времени и применяйте в driftwm.",
+        }
+    }
+
+    pub fn shader_archetype(&self) -> &'static str {
+        match self {
+            Language::English => "Shader Style / Archetype:",
+            Language::Russian => "Стиль шейдера:",
+        }
+    }
+
+    pub fn shader_palette_presets(&self) -> &'static str {
+        match self {
+            Language::English => "Color Palettes:",
+            Language::Russian => "Цветовые палитры:",
+        }
+    }
+
+    pub fn shader_preview_badge(&self) -> &'static str {
+        match self {
+            Language::English => "LIVE VECTOR SIMULATION PREVIEW",
+            Language::Russian => "ИНТЕРАКТИВНЫЙ ПРЕДПРОСМОТР",
+        }
+    }
+
+    pub fn shader_speed(&self) -> &'static str {
+        match self {
+            Language::English => "Animation Speed (u_time):",
+            Language::Russian => "Скорость анимации (u_time):",
+        }
+    }
+
+    pub fn shader_scale(&self) -> &'static str {
+        match self {
+            Language::English => "Pattern Scale / Density:",
+            Language::Russian => "Масштаб / плотность сетки:",
+        }
+    }
+
+    pub fn shader_parallax(&self) -> &'static str {
+        match self {
+            Language::English => "Canvas Parallax (u_camera):",
+            Language::Russian => "Параллакс холста (u_camera):",
+        }
+    }
+
+    pub fn shader_glow(&self) -> &'static str {
+        match self {
+            Language::English => "Glow & Intensity:",
+            Language::Russian => "Яркость и свечение:",
+        }
+    }
+
+    pub fn shader_zoom_reactive(&self) -> &'static str {
+        match self {
+            Language::English => "Zoom Reactive (scale features with u_zoom)",
+            Language::Russian => "Масштабировать элементы вместе с зумом (u_zoom)",
+        }
+    }
+
+    pub fn shader_transparent(&self) -> &'static str {
+        match self {
+            Language::English => "Transparent Shader (transparent_shader = true for external backdrop)",
+            Language::Russian => "Прозрачный шейдер (transparent_shader = true для внешних обоев)",
+        }
+    }
+
+    pub fn shader_color_primary(&self) -> &'static str {
+        match self {
+            Language::English => "Color 1 (Primary)",
+            Language::Russian => "Цвет 1 (Основной)",
+        }
+    }
+
+    pub fn shader_color_secondary(&self) -> &'static str {
+        match self {
+            Language::English => "Color 2 (Secondary)",
+            Language::Russian => "Цвет 2 (Вторичный)",
+        }
+    }
+
+    pub fn shader_color_accent(&self) -> &'static str {
+        match self {
+            Language::English => "Color 3 (Accent)",
+            Language::Russian => "Цвет 3 (Акцент)",
+        }
+    }
+
+    pub fn shader_color_bg(&self) -> &'static str {
+        match self {
+            Language::English => "Color 4 (Background)",
+            Language::Russian => "Цвет 4 (Фон)",
+        }
+    }
+
+    pub fn shader_code_title(&self) -> &'static str {
+        match self {
+            Language::English => "GLSL ES 1.0 Shader Source",
+            Language::Russian => "Исходный код GLSL ES 1.0",
+        }
+    }
+
+    pub fn shader_manual_mode(&self) -> &'static str {
+        match self {
+            Language::English => "Manual Code Edit Mode",
+            Language::Russian => "Ручное редактирование кода",
+        }
+    }
+
+    pub fn shader_reset_code(&self) -> &'static str {
+        match self {
+            Language::English => "Reset to Generator",
+            Language::Russian => "Сбросить к генератору",
+        }
+    }
+
+    pub fn shader_check_syntax(&self) -> &'static str {
+        match self {
+            Language::English => "Check Syntax",
+            Language::Russian => "Проверить синтаксис",
+        }
+    }
+
+    pub fn shader_save_button(&self) -> &'static str {
+        match self {
+            Language::English => "Save Shader",
+            Language::Russian => "Сохранить шейдер",
+        }
+    }
+
+    pub fn shader_apply_button(&self) -> &'static str {
+        match self {
+            Language::English => "Save & Set as Driftwm Background",
+            Language::Russian => "Сохранить и применить как фон",
+        }
+    }
+
+    pub fn shader_filename_label(&self) -> &'static str {
+        match self {
+            Language::English => "File Name (.glsl):",
+            Language::Russian => "Имя файла (.glsl):",
         }
     }
 }

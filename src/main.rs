@@ -13,6 +13,7 @@ use toml_edit::DocumentMut;
 use views::bookmarks::BookmarksState;
 use views::general::GeneralState;
 use views::keybindings::KeybindingsState;
+use views::shader_studio::ShaderStudioState;
 use views::Tab;
 
 use iced::widget::{button, column, container, row, scrollable, text};
@@ -48,6 +49,7 @@ struct App {
     general_state: GeneralState,
     bookmarks_state: BookmarksState,
     keybindings_state: KeybindingsState,
+    shader_studio_state: ShaderStudioState,
     status_banner: Option<(BannerKind, String)>,
 }
 
@@ -61,6 +63,7 @@ enum Message {
     Input(views::input::InputMessage),
     Keybindings(views::keybindings::KeybindingsMessage),
     Rules(views::rules::RulesMessage),
+    ShaderStudio(views::shader_studio::ShaderStudioMessage),
     Settings(views::settings::SettingsMessage),
     SaveConfig,
     ValidateConfig,
@@ -93,6 +96,7 @@ impl Default for App {
             general_state: GeneralState::default(),
             bookmarks_state: BookmarksState::default(),
             keybindings_state: KeybindingsState::default(),
+            shader_studio_state: ShaderStudioState::default(),
             status_banner: None,
         }
     }
@@ -117,7 +121,11 @@ impl App {
                 views::appearance::update(&mut self.config, msg);
             }
             Message::Background(msg) => {
-                views::background::update(&mut self.config, msg);
+                if matches!(msg, views::background::BackgroundMessage::OpenShaderStudio) {
+                    self.current_tab = Tab::ShaderStudio;
+                } else {
+                    views::background::update(&mut self.config, msg);
+                }
             }
             Message::Bookmarks(msg) => {
                 views::bookmarks::update(&mut self.config, &mut self.bookmarks_state, msg);
@@ -130,6 +138,15 @@ impl App {
             }
             Message::Rules(msg) => {
                 views::rules::update(&mut self.config, msg);
+            }
+            Message::ShaderStudio(msg) => {
+                views::shader_studio::update(
+                    &mut self.shader_studio_state,
+                    &mut self.config,
+                    &mut self.doc,
+                    &self.config_path,
+                    msg,
+                );
             }
             Message::Settings(msg) => {
                 views::settings::update(&mut self.settings, msg);
@@ -310,6 +327,7 @@ impl App {
                 Tab::General => icons::icon_general(icon_color, 16.0).into(),
                 Tab::Appearance => icons::icon_appearance(icon_color, 16.0).into(),
                 Tab::Background => icons::icon_background(icon_color, 16.0).into(),
+                Tab::ShaderStudio => icons::icon_sparkles(icon_color, 16.0).into(),
                 Tab::Bookmarks => icons::icon_bookmarks(icon_color, 16.0).into(),
                 Tab::Input => icons::icon_input(icon_color, 16.0).into(),
                 Tab::Keybindings => icons::icon_hotkeys(icon_color, 16.0).into(),
@@ -440,6 +458,7 @@ impl App {
             Tab::General => views::general::view(&self.config, &self.general_state, lang).map(Message::General),
             Tab::Appearance => views::appearance::view(&self.config, lang).map(Message::Appearance),
             Tab::Background => views::background::view(&self.config, lang).map(Message::Background),
+            Tab::ShaderStudio => views::shader_studio::view(&self.shader_studio_state, lang).map(Message::ShaderStudio),
             Tab::Bookmarks => {
                 views::bookmarks::view(&self.config, &self.bookmarks_state, lang).map(Message::Bookmarks)
             }

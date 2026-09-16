@@ -20,6 +20,7 @@ pub enum BackgroundMessage {
         path: String,
         texture: Option<String>,
     },
+    OpenShaderStudio,
 }
 
 pub fn update(config: &mut DriftwmConfig, msg: BackgroundMessage) {
@@ -65,6 +66,7 @@ pub fn update(config: &mut DriftwmConfig, msg: BackgroundMessage) {
             config.background.path = Some(path);
             config.background.texture = texture;
         }
+        BackgroundMessage::OpenShaderStudio => {}
     }
 }
 
@@ -149,12 +151,33 @@ pub fn view(config: &DriftwmConfig, lang: Language) -> Element<'static, Backgrou
     let card_source = match current_kind.as_str() {
         "shader" => container(
             column![
-                text("Shader Configuration")
-                    .size(18)
-                    .color(mocha::MAUVE),
-                text("Specify the GLSL shader path and optional texture sampler.")
-                    .size(13)
-                    .color(mocha::SUBTEXT0),
+                row![
+                    column![
+                        text("Shader Configuration")
+                            .size(18)
+                            .color(mocha::MAUVE),
+                        text("Specify the GLSL shader path and optional texture sampler.")
+                            .size(13)
+                            .color(mocha::SUBTEXT0),
+                    ]
+                    .width(Length::Fill),
+                    button(
+                        row![
+                            icons::icon_sparkles(mocha::BASE, 14.0),
+                            text(match lang {
+                                Language::English => "✨ Open Shader Studio",
+                                Language::Russian => "✨ Студия шейдеров",
+                            })
+                            .size(13),
+                        ]
+                        .spacing(8)
+                        .align_y(Alignment::Center)
+                    )
+                    .on_press(BackgroundMessage::OpenShaderStudio)
+                    .style(crate::theme::primary_button_style)
+                    .padding(8),
+                ]
+                .align_y(Alignment::Center),
 
                 row![
                     text("Shader File (.glsl):").size(14).color(mocha::TEXT).width(Length::Fixed(180.0)),
