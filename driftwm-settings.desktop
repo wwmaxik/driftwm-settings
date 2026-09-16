@@ -5,5 +5,5 @@ Exec=driftwm-settings
 Icon=driftwm-settings
 Terminal=false
 Type=Application
-Categories=Settings;DesktopSettings;GTK;
+Categories=Settings;DesktopSettings;
 Keywords=driftwm;wayland;compositor;settings;configuration;

@@ -1,123 +1,46 @@
 # driftwm-settings
 
-Complete GUI settings manager for [driftwm](https://github.com/malbiruk/driftwm) compositor.
+Fast, lightweight, pure Rust configuration utility for the [driftwm](https://github.com/malbiruk/driftwm) Wayland compositor, built with [iced](https://github.com/iced-rs/iced) 0.13+ and styled in **Catppuccin Mocha**.
 
-![CI](https://github.com/wwmaxik/driftwm-settings/workflows/CI/badge.svg)
-![Version](https://img.shields.io/badge/version-0.2.1-blue)
+![Version](https://img.shields.io/badge/version-0.5.0-blue)
 ![Rust](https://img.shields.io/badge/rust-1.85%2B-orange)
-![GTK](https://img.shields.io/badge/GTK-4-green)
+![GUI](https://img.shields.io/badge/GUI-iced_0.13-purple)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
-
-## Next Update - ±20.08.2026
-Note: The developer is currently on vacation until August 20, 2026.
-
-## Supported Versions
-driftwm versions up to 0.4.0 (inclusive) are fully supported.
 
 ## Features
 
-- 🎨 **Native GTK4 interface** with sidebar navigation
-- ⚙️ **All driftwm settings** - 15+ configuration pages covering every option
-- 💾 **Live editing** - changes update config structure in real-time
-- 🔄 **Hot reload support** - driftwm automatically reloads config on save
-- 📝 **TOML format** - reads/writes `~/.config/driftwm/config.toml`
-- 🎭 **Interactive Shader Editor** - create custom animated backgrounds with visual controls
-- 🪟 **Window Rules** - per-app blur, opacity, and decoration settings
-
-## Settings Pages
-
-### 1. General
-- Modifier key (super/alt)
-- Focus follows mouse
-
-### 2. Keyboard
-- Layout, variant, options, model
-- Repeat rate and delay
-- Layout independent keybindings
-- Num Lock and Caps Lock startup state
-
-### 3. Trackpad
-- Tap to click, natural scroll, tap and drag
-- Acceleration speed and profile
-- Click method
-
-### 4. Mouse
-- Acceleration speed and profile
-- Natural scroll
-
-### 5. Cursor
-- Theme and size
-- Inactive opacity
-
-### 6. Navigation
-- Trackpad and mouse speed
-- Friction and animation speed
-- Nudge and pan step
-- Edge pan settings
-
-### 7. Zoom
-- Zoom step multiplier
-- Fit padding
-- Reset on new window/activation
-
-### 8. Snap
-- Enable/disable snapping
-- Gap, distance, break force
-- Same edge snapping
-
-### 9. Decorations
-- Background and foreground colors
-- Corner radius
-
-### 10. Effects
-- Blur radius (0-20 passes) and strength (0.1-5.0)
-- 6 blur presets: None, Light, Default, Medium, Strong, Extreme
-
-### 11. Window Rules
-- Per-app blur, opacity, decoration settings
-- Match by app_id and/or title (glob support)
-- Widget mode (pinned windows)
-- Dynamic add/remove rules
-
-### 12. Backend
-- Wait for frame completion
-- Disable direct scanout
-- NVIDIA environment variables guide
-
-### 13. Background
-- Shader path (GLSL)
-- Tile path (PNG/JPG)
-- Quick access to Shader Editor
-
-### 14. Shader Editor ✨ NEW
-- **Visual Mode**: Interactive controls for colors, animation, effects
-  - 3 shader templates: Gradient, Animated Waves, Clouds
-  - RGB color pickers for primary and secondary colors
-  - Animation speed, pattern scale, complexity controls
-  - Vignette and glow effects
-- **Raw Mode**: Full GLSL code editor for advanced users
-- Generate and save custom shaders
-- Apply directly to background
-
-### 15. Keybindings
-- Custom keyboard shortcuts
-- Add/remove bindings dynamically
-
-### 16. Autostart
-- Multi-line editor for startup commands
+- 🦀 **Pure Rust & Lightweight** — Completely rewritten from legacy GTK4 to Iced 0.13. Fast startup, minimal memory footprint, zero GTK/C-binding overhead.
+- 🎨 **Catppuccin Mocha Theme** — Beautiful, modern dark UI designed specifically for Wayland environments.
+- 📝 **Lossless TOML Editing (`toml_edit`)** — Preserves your user comments, custom formatting, and unmanaged tables (keybindings, autostart) in `~/.config/driftwm/config.toml`.
+- 🔍 **Config Validation & Diagnostics** — Integrated check via `driftwm --check-config` before saving, with built-in semantic fallback validation and helpful warning banners.
+- 🪟 **Comprehensive driftwm 0.19+ Support**:
+  - **General / Placement**: Window placement (`center`, `cursor`, `auto`), focus placement (center, edges, corners), mod keys, sloppy focus, navigation on close, session restore.
+  - **Appearance & Deco**: Decoration mode (`client`, `minimal`, `none`), window spacing (`gap`), screen inset (`outer_gap`), corner radius, borders, colors, opacity, blur, SSD titlebar fonts.
+  - **Background**: Mode switch (`default` dot-grid, `shader`, `tile`, `wallpaper`, `none`), file pickers, mirror-fold tiles, shader cache and transparent settings, presets.
+  - **Bookmarks & Nav**: Named canvas coordinates (`[x, y]`), anchors, camera lerp factor, drift momentum, edge-pan thresholds, and zoom configuration.
+  - **Input Devices**: Keyboard layout/repeat/options, trackpad tap/drag/natural-scroll/speed, mouse speed/profile.
 
 ## Installation
 
-### Requirements
+### Prerequisites
 
-- GTK4
-- Rust 1.85+ (edition 2024)
+- Rust 1.85+ (stable)
+- Linux Wayland / X11 development headers:
+  ```bash
+  # Debian / Ubuntu
+  sudo apt install -y pkg-config libxkbcommon-dev libfontconfig1-dev
+  # Arch Linux
+  sudo pacman -S --needed pkg-config libxkbcommon fontconfig
+  # Fedora
+  sudo dnf install -y pkgconf-pkg-config libxkbcommon-devel fontconfig-devel
+  ```
 
-### Build from source
+### Build & Run
 
 ```bash
-cd ~/driftwmsettings
+cd driftwm-settings
 cargo build --release
+./target/release/driftwm-settings
 ```
 
 ### Install system-wide
@@ -126,127 +49,27 @@ cargo build --release
 sudo make install
 ```
 
-This installs:
-- Binary to `/usr/local/bin/driftwm-settings`
-- Desktop entry to `/usr/local/share/applications/`
-
-### Uninstall
-
-```bash
-sudo make uninstall
-```
-
-## Usage
-
-### Launch from terminal
-
-```bash
-driftwm-settings
-```
-
-### Launch from application menu
-
-Search for "driftwm Settings" in your application launcher.
-
-### Development
-
-```bash
-cargo run
-```
-
 ## Project Structure
 
 ```
-driftwmsettings/
+driftwm-settings/
 ├── src/
-│   ├── main.rs           # UI and page implementations
-│   ├── config.rs         # TOML config structures
-│   ├── config_helpers.rs # Config initialization helpers
-│   ├── ui_helpers.rs     # UI widget helpers
-│   └── shader_editor.rs  # Interactive shader editor
+│   ├── main.rs          # Application entrypoint & Elm-style routing (iced 0.13)
+│   ├── config.rs        # Driftwm 0.19+ schema & toml_edit lossless syncing
+│   ├── theme.rs         # Catppuccin Mocha dark theme palette & widget styling
+│   ├── validator.rs     # driftwm --check-config runner & syntax validator
+│   └── views/
+│       ├── mod.rs       # Tab navigation definitions
+│       ├── general.rs   # Window placement, focus, mod_key & session
+│       ├── appearance.rs# Decorations, gaps, borders, fonts & blur effects
+│       ├── background.rs# Background mode, shaders, tiles & wallpapers
+│       ├── bookmarks.rs # Bookmarks registry, anchors & pan dynamics
+│       └── input.rs     # Keyboard, trackpad & mouse device settings
 ├── Cargo.toml
 ├── Makefile
-├── README.md
 └── driftwm-settings.desktop
 ```
-
-## Configuration
-
-The app reads and writes to:
-```
-~/.config/driftwm/config.toml
-```
-
-Changes are saved when you click the "Save" button. driftwm will automatically reload the config within 1 second (hot reload).
-
-Custom shaders are saved to:
-```
-~/.config/driftwm/custom_shader.glsl
-```
-
-## Recent Changes
-
-### v0.2.1
-- 🐛 **Bug Fix:** Fixed an issue where persistent and excessive scrollbars appeared by allowing the content area to dynamically resize based on the active page instead of keeping the maximum height of the tallest page.
-
-### v0.2.0
-
-#### New Features
-- ✨ **Interactive Shader Editor** with Visual/Raw modes
-- 🪟 **Window Rules** page for per-app settings
-- 🎨 **Enhanced blur controls** with 6 presets
-- 📏 **Better window sizing** - reduced default size to 900x650
-- 🔄 **Scroll reset** - pages always start from top when switching
-- 🔤 **Clearer labels** - "Layout independent keybindings" with tooltip
-
-### Config Updates
-- Added `num_lock` and `caps_lock` keyboard settings
-- Added `reset_on_new_window` and `reset_on_activation` zoom settings
-- Removed `force_legacy_drm` (now uses `SMITHAY_USE_LEGACY=1` env var)
-
-### Bug Fixes
-- Fixed scroll state persisting between sections (#1)
-- Fixed default layout being too wide (#2)
-- Improved "Layout independent" label clarity (#3)
-
-## Screenshots
-
-*(Coming soon)*
-
-## Development
-
-### Adding new settings
-
-1. Add field to appropriate struct in `src/config.rs`
-2. Add UI widget in corresponding `add_*_page()` function in `src/main.rs`
-3. Connect widget signal to update config
-
-### Code style
-
-- Use `create_row()` for horizontal layouts
-- Use `add_label()` for consistent label width
-- Use `ensure_*()` helpers to initialize nested config structs
-- Follow existing patterns for Switch, Entry, and SpinButton widgets
 
 ## License
 
 GPL-3.0-or-later (same as driftwm)
-
-## Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-- Fork the repository
-- Create a feature branch
-- Make your changes
-- Run tests: `cargo fmt`, `cargo clippy`, `cargo build`
-- Submit a pull request
-
-See also: [Code of Conduct](CODE_OF_CONDUCT.md)
-
-For upstream driftwm, see [malbiruk/driftwm](https://github.com/malbiruk/driftwm).
-
-## Credits
-
-- Built for [driftwm](https://github.com/malbiruk/driftwm) by malbiruk
-- GUI implementation by wwmaxik
