@@ -12,12 +12,20 @@ use views::Tab;
 use iced::widget::{button, column, container, row, scrollable, text};
 use iced::{Alignment, Element, Length, Theme};
 
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+core::arch::global_asm!(
+    ".symver acosf, acosf@GLIBC_2.2.5",
+    ".symver atan2f, atan2f@GLIBC_2.2.5",
+    ".symver hypotf, hypotf@GLIBC_2.2.5",
+);
+
 fn main() -> iced::Result {
     iced::application("driftwm settings", App::update, App::view)
         .theme(App::theme)
         .window_size(iced::Size::new(1040.0, 760.0))
         .run()
 }
+
 
 #[derive(Debug, Clone, PartialEq)]
 enum BannerKind {
