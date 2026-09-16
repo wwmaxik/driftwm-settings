@@ -124,7 +124,10 @@ pub fn update(config: &mut DriftwmConfig, msg: AppearanceMessage) {
     }
 }
 
-pub fn view(config: &DriftwmConfig) -> Element<'static, AppearanceMessage> {
+use crate::i18n::Language;
+use crate::icons;
+
+pub fn view(config: &DriftwmConfig, lang: Language) -> Element<'static, AppearanceMessage> {
     let mode_options = vec!["client".to_string(), "minimal".to_string(), "none".to_string()];
     let current_mode = config
         .decorations
@@ -160,15 +163,29 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, AppearanceMessage> {
 
     let card_chrome = container(
         column![
-            text("Window Chrome & Titlebar")
+            row![
+                icons::icon_appearance(mocha::MAUVE, 18.0),
+                text(match lang {
+                    Language::English => "Window Chrome & Titlebar",
+                    Language::Russian => "Заголовок и оформление окон",
+                })
                 .size(18)
                 .color(mocha::MAUVE),
-            text("Global window decoration mode and server-side decoration (SSD) typography.")
-                .size(13)
-                .color(mocha::SUBTEXT0),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+            text(match lang {
+                Language::English => "Global window decoration mode and server-side decoration (SSD) typography.",
+                Language::Russian => "Режим рамок окон и параметры серверных заголовков (SSD).",
+            })
+            .size(13)
+            .color(mocha::SUBTEXT0),
 
             row![
-                text("Default Mode:").size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
+                text(match lang {
+                    Language::English => "Default Mode:",
+                    Language::Russian => "Режим по умолчанию:",
+                }).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
                 pick_list(mode_options, Some(current_mode), AppearanceMessage::DefaultModeChanged)
                     .style(pick_list_style)
                     .width(Length::Fixed(180.0)),
@@ -251,15 +268,29 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, AppearanceMessage> {
 
     let card_borders = container(
         column![
-            text("Borders, Corners & Shadows")
+            row![
+                icons::icon_general(mocha::TEAL, 18.0),
+                text(match lang {
+                    Language::English => "Borders, Corners & Shadows",
+                    Language::Russian => "Границы, скругление и тени",
+                })
                 .size(18)
                 .color(mocha::MAUVE),
-            text("Appearance of window borders, rounded corners and drop shadows.")
-                .size(13)
-                .color(mocha::SUBTEXT0),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+            text(match lang {
+                Language::English => "Appearance of window borders, rounded corners and drop shadows.",
+                Language::Russian => "Внешний вид рамок окон, скругление углов и отбрасывание теней.",
+            })
+            .size(13)
+            .color(mocha::SUBTEXT0),
 
             row![
-                text(format!("Border Width: {} px", border_w as i32)).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
+                text(match lang {
+                    Language::English => format!("Border Width: {} px", border_w as i32),
+                    Language::Russian => format!("Толщина границы: {} px", border_w as i32),
+                }).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
                 slider(0.0..=16.0, border_w, AppearanceMessage::BorderWidthChanged)
                     .style(slider_style)
                     .width(Length::Fixed(220.0)),
@@ -268,7 +299,10 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, AppearanceMessage> {
             .align_y(Alignment::Center),
 
             row![
-                text("Unfocused Border Color:").size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
+                text(match lang {
+                    Language::English => "Unfocused Border Color:",
+                    Language::Russian => "Цвет неактивной границы:",
+                }).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
                 text_input("#303030", &border_col)
                     .on_input(AppearanceMessage::BorderColorChanged)
                     .style(input_style)
@@ -278,7 +312,10 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, AppearanceMessage> {
             .align_y(Alignment::Center),
 
             row![
-                text("Focused Border Color:").size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
+                text(match lang {
+                    Language::English => "Focused Border Color:",
+                    Language::Russian => "Цвет активной границы:",
+                }).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
                 text_input("#303030", &border_col_foc)
                     .on_input(AppearanceMessage::BorderColorFocusedChanged)
                     .style(input_style)
@@ -288,7 +325,10 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, AppearanceMessage> {
             .align_y(Alignment::Center),
 
             row![
-                text(format!("Corner Radius: {} px", corner_r as i32)).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
+                text(match lang {
+                    Language::English => format!("Corner Radius: {} px", corner_r as i32),
+                    Language::Russian => format!("Радиус скругления: {} px", corner_r as i32),
+                }).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
                 slider(0.0..=32.0, corner_r, AppearanceMessage::CornerRadiusChanged)
                     .style(slider_style)
                     .width(Length::Fixed(220.0)),
@@ -296,9 +336,15 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, AppearanceMessage> {
             .spacing(12)
             .align_y(Alignment::Center),
 
-            checkbox("Drop shadow under window chrome", config.decorations.shadow.unwrap_or(true))
-                .on_toggle(AppearanceMessage::ShadowToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Drop shadows (render soft shadows around floating/tiled windows)",
+                    Language::Russian => "Отбрасывание теней (мягкие тени вокруг окон)",
+                },
+                config.decorations.shadow.unwrap_or(true)
+            )
+            .on_toggle(AppearanceMessage::ShadowToggled)
+            .size(16),
         ]
         .spacing(14),
     )
@@ -314,19 +360,39 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, AppearanceMessage> {
 
     let card_spacing = container(
         column![
-            text("Window Spacing & Magnetic Snapping")
+            row![
+                icons::icon_settings(mocha::BLUE, 18.0),
+                text(match lang {
+                    Language::English => "Window Spacing & Magnetic Snapping",
+                    Language::Russian => "Отступы окон и магнитное прилипание",
+                })
                 .size(18)
                 .color(mocha::MAUVE),
-            text("Configure window-to-window spacing (gap), screen edge inset (outer_gap), and magnetic snap thresholds.")
-                .size(13)
-                .color(mocha::SUBTEXT0),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+            text(match lang {
+                Language::English => "Configure window-to-window spacing (gap), screen edge inset (outer_gap), and snap thresholds.",
+                Language::Russian => "Настройка расстояния между окнами (gap), отступа от краёв экрана (outer_gap) и порогов прилипания.",
+            })
+            .size(13)
+            .color(mocha::SUBTEXT0),
 
-            checkbox("Enable magnetic snapping during window drag", config.snap.enabled.unwrap_or(true))
-                .on_toggle(AppearanceMessage::SnapEnabledToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Enable magnetic snapping during window drag",
+                    Language::Russian => "Включить магнитное прилипание при перетаскивании окон",
+                },
+                config.snap.enabled.unwrap_or(true)
+            )
+            .on_toggle(AppearanceMessage::SnapEnabledToggled)
+            .size(16),
 
             row![
-                text(format!("Window Gap: {:.1} px", gap)).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
+                text(match lang {
+                    Language::English => format!("Window Gap: {:.1} px", gap),
+                    Language::Russian => format!("Отступ окон: {:.1} px", gap),
+                }).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),
                 slider(0.0..=48.0, gap, AppearanceMessage::GapChanged)
                     .style(slider_style)
                     .width(Length::Fixed(220.0)),
@@ -390,12 +456,23 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, AppearanceMessage> {
 
     let card_effects = container(
         column![
-            text("Opacity & Backdrop Blur Effects")
+            row![
+                icons::icon_appearance(mocha::LAVENDER, 18.0),
+                text(match lang {
+                    Language::English => "Opacity & Backdrop Blur Effects",
+                    Language::Russian => "Прозрачность и эффекты размытия",
+                })
                 .size(18)
                 .color(mocha::MAUVE),
-            text("Transparency, backdrop Kawase blur and window motion animation.")
-                .size(13)
-                .color(mocha::SUBTEXT0),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+            text(match lang {
+                Language::English => "Transparency, backdrop Kawase blur and window motion animation.",
+                Language::Russian => "Прозрачность окон, размытие фона (Kawase blur) и плавные анимации.",
+            })
+            .size(13)
+            .color(mocha::SUBTEXT0),
 
             row![
                 text(format!("Unfocused Opacity: {:.2}", op)).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),

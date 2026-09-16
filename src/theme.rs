@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use iced::widget::{button, container, pick_list, slider, text_input};
+use iced::widget::{button, container, pick_list, slider, text_input, toggler};
 use iced::{border::Radius, Border, Color, Theme};
 
 pub mod mocha {
@@ -281,5 +281,33 @@ pub fn slider_style(_theme: &Theme, _status: slider::Status) -> slider::Style {
             border_width: 1.0,
             border_color: mocha::SURFACE0,
         },
+    }
+}
+
+/// Toggler style
+pub fn toggler_style(_theme: &Theme, status: toggler::Status) -> toggler::Style {
+    let is_toggled = match status {
+        toggler::Status::Active { is_toggled } | toggler::Status::Hovered { is_toggled } => is_toggled,
+        toggler::Status::Disabled => false,
+    };
+
+    if is_toggled {
+        toggler::Style {
+            background: mocha::MAUVE,
+            background_border_width: 1.0,
+            background_border_color: mocha::MAUVE,
+            foreground: mocha::BASE,
+            foreground_border_width: 0.0,
+            foreground_border_color: Color::TRANSPARENT,
+        }
+    } else {
+        toggler::Style {
+            background: mocha::SURFACE0,
+            background_border_width: 1.0,
+            background_border_color: mocha::SURFACE1,
+            foreground: mocha::SUBTEXT0,
+            foreground_border_width: 0.0,
+            foreground_border_color: Color::TRANSPARENT,
+        }
     }
 }

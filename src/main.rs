@@ -1,8 +1,12 @@
+mod app_settings;
 mod config;
+mod i18n;
+mod icons;
 mod theme;
 mod validator;
 mod views;
 
+use app_settings::AppSettings;
 use config::DriftwmConfig;
 use std::path::PathBuf;
 use toml_edit::DocumentMut;
@@ -22,10 +26,9 @@ core::arch::global_asm!(
 fn main() -> iced::Result {
     iced::application("driftwm settings", App::update, App::view)
         .theme(App::theme)
-        .window_size(iced::Size::new(1040.0, 760.0))
+        .window_size(iced::Size::new(1060.0, 780.0))
         .run()
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 enum BannerKind {
@@ -38,6 +41,7 @@ struct App {
     config: DriftwmConfig,
     doc: DocumentMut,
     config_path: PathBuf,
+    settings: AppSettings,
     current_tab: Tab,
     bookmarks_state: BookmarksState,
     status_banner: Option<(BannerKind, String)>,
@@ -51,6 +55,7 @@ enum Message {
     Background(views::background::BackgroundMessage),
     Bookmarks(views::bookmarks::BookmarksMessage),
     Input(views::input::InputMessage),
+    Settings(views::settings::SettingsMessage),
     SaveConfig,
     ValidateConfig,
     ReloadConfig,
@@ -59,7 +64,13 @@ enum Message {
 
 impl Default for App {
     fn default() -> Self {
-        let path = DriftwmConfig::default_path();
+        let settings = AppSettings::load();
+        let path = if let Some(custom) = &settings.custom_config_path {
+            PathBuf::from(custom)
+        } else {
+            DriftwmConfig::default_path()
+        };
+
         let (config, doc) = DriftwmConfig::load(&path).unwrap_or_else(|_| {
             (
                 DriftwmConfig::default_with_presets(),
@@ -71,6 +82,7 @@ impl Default for App {
             config,
             doc,
             config_path: path,
+            settings,
             current_tab: Tab::General,
             bookmarks_state: BookmarksState::default(),
             status_banner: None,
@@ -84,6 +96,8 @@ impl App {
     }
 
     fn update(&mut self, message: Message) {
+        let lang = self.settings.language;
+
         match message {
             Message::TabSelected(tab) => {
                 self.current_tab = tab;
@@ -103,55 +117,82 @@ impl App {
             Message::Input(msg) => {
                 views::input::update(&mut self.config, msg);
             }
+            Message::Settings(msg) => {
+                views::settings::update(&mut self.settings, msg);
+                let new_path = if let Some(custom) = &self.settings.custom_config_path {
+                    PathBuf::from(custom)
+                } else {
+                    DriftwmConfig::default_path()
+                };
+                if new_path != self.config_path {
+                    self.config_path = new_path;
+                    if let Ok((cfg, doc)) = DriftwmConfig::load(&self.config_path) {
+                        self.config = cfg;
+                        self.doc = doc;
+                    }
+                }
+            }
             Message::SaveConfig => {
                 match self.config.save(&mut self.doc, &self.config_path) {
                     Ok(()) => {
-                        let status = validator::ConfigValidator::validate_file(&self.config_path);
-                        match status {
-                            validator::ValidationStatus::Success { warnings } => {
-                                if warnings.is_empty() {
-                                    self.status_banner = Some((
-                                        BannerKind::Success,
-                                        format!(
-                                            "Configuration successfully saved to {} and verified!",
-                                            self.config_path.display()
-                                        ),
-                                    ));
-                                } else {
+                        if self.settings.auto_validate {
+                            let status = validator::ConfigValidator::validate_file(&self.config_path);
+                            match status {
+                                validator::ValidationStatus::Success { warnings } => {
+                                    if warnings.is_empty() {
+                                        self.status_banner = Some((
+                                            BannerKind::Success,
+                                            format!(
+                                                "{} ({})",
+                                                lang.save_success(),
+                                                self.config_path.display()
+                                            ),
+                                        ));
+                                    } else {
+                                        self.status_banner = Some((
+                                            BannerKind::Warning,
+                                            format!(
+                                                "{} ({})\n{}",
+                                                lang.save_warnings(),
+                                                self.config_path.display(),
+                                                warnings.join("\n")
+                                            ),
+                                        ));
+                                    }
+                                }
+                                validator::ValidationStatus::Warning { warnings } => {
                                     self.status_banner = Some((
                                         BannerKind::Warning,
                                         format!(
-                                            "Saved to {}, but driftwm reported {} warning(s):\n{}",
+                                            "{} ({})\n{}",
+                                            lang.save_warnings(),
                                             self.config_path.display(),
-                                            warnings.len(),
                                             warnings.join("\n")
                                         ),
                                     ));
                                 }
+                                validator::ValidationStatus::Error { message } => {
+                                    self.status_banner = Some((
+                                        BannerKind::Error,
+                                        format!("{}\n{}", lang.save_error(), message),
+                                    ));
+                                }
                             }
-                            validator::ValidationStatus::Warning { warnings } => {
-                                self.status_banner = Some((
-                                    BannerKind::Warning,
-                                    format!(
-                                        "Saved to {}, but with {} warning(s):\n{}",
-                                        self.config_path.display(),
-                                        warnings.len(),
-                                        warnings.join("\n")
-                                    ),
-                                ));
-                            }
-                            validator::ValidationStatus::Error { message } => {
-                                self.status_banner = Some((
-                                    BannerKind::Error,
-                                    format!("File saved, but validation failed:\n{}", message),
-                                ));
-                            }
+                        } else {
+                            self.status_banner = Some((
+                                BannerKind::Success,
+                                format!(
+                                    "{} ({})",
+                                    lang.save_success(),
+                                    self.config_path.display()
+                                ),
+                            ));
                         }
                     }
                     Err(e) => {
                         self.status_banner = Some((
                             BannerKind::Error,
-                            format!("Failed to save configuration: {}", e),
+                            format!("{} {}", lang.save_error(), e),
                         ));
                     }
                 }
@@ -163,13 +204,14 @@ impl App {
                         if warnings.is_empty() {
                             self.status_banner = Some((
                                 BannerKind::Success,
-                                "Config OK: No errors or warnings detected!".to_string(),
+                                lang.check_success().to_string(),
                             ));
                         } else {
                             self.status_banner = Some((
                                 BannerKind::Warning,
                                 format!(
-                                    "Config OK with {} warning(s):\n{}",
+                                    "{} ({}):\n{}",
+                                    lang.save_warnings(),
                                     warnings.len(),
                                     warnings.join("\n")
                                 ),
@@ -202,7 +244,8 @@ impl App {
                         self.status_banner = Some((
                             BannerKind::Success,
                             format!(
-                                "Configuration reloaded from {}",
+                                "{} ({})",
+                                lang.reloaded(),
                                 self.config_path.display()
                             ),
                         ));
@@ -222,17 +265,19 @@ impl App {
     }
 
     fn view(&self) -> Element<'_, Message> {
+        let lang = self.settings.language;
+
         // --- Left Sidebar ---
         let brand_header = column![
             row![
-                text("⌘").size(24).color(theme::mocha::MAUVE),
+                icons::icon_general(theme::mocha::MAUVE, 22.0),
                 text("driftwm")
                     .size(22)
                     .color(theme::mocha::TEXT),
             ]
             .spacing(8)
             .align_y(Alignment::Center),
-            text("Settings Utility")
+            text(lang.app_subtitle())
                 .size(12)
                 .color(theme::mocha::SUBTEXT0),
         ]
@@ -241,10 +286,25 @@ impl App {
         let mut nav_tabs = column![].spacing(6);
         for tab in Tab::ALL {
             let is_active = self.current_tab == tab;
+            let icon_color = if is_active {
+                theme::mocha::MAUVE
+            } else {
+                theme::mocha::SUBTEXT0
+            };
+
+            let icon_el: Element<'static, Message> = match tab {
+                Tab::General => icons::icon_general(icon_color, 16.0).into(),
+                Tab::Appearance => icons::icon_appearance(icon_color, 16.0).into(),
+                Tab::Background => icons::icon_background(icon_color, 16.0).into(),
+                Tab::Bookmarks => icons::icon_bookmarks(icon_color, 16.0).into(),
+                Tab::Input => icons::icon_input(icon_color, 16.0).into(),
+                Tab::Settings => icons::icon_settings(icon_color, 16.0).into(),
+            };
+
             let btn = button(
                 row![
-                    text(tab.icon()).size(16),
-                    text(tab.title()).size(14),
+                    icon_el,
+                    text(tab.title(lang)).size(14),
                 ]
                 .spacing(10)
                 .align_y(Alignment::Center),
@@ -260,8 +320,8 @@ impl App {
         let sidebar_actions = column![
             button(
                 row![
-                    text("💾").size(15),
-                    text("Save Changes").size(13),
+                    icons::icon_save(theme::mocha::BASE, 15.0),
+                    text(lang.save_changes()).size(13),
                 ]
                 .spacing(8)
                 .align_y(Alignment::Center),
@@ -273,8 +333,8 @@ impl App {
 
             button(
                 row![
-                    text("✓").size(15),
-                    text("Check Config").size(13),
+                    icons::icon_check(theme::mocha::BASE, 15.0),
+                    text(lang.check_config()).size(13),
                 ]
                 .spacing(8)
                 .align_y(Alignment::Center),
@@ -286,8 +346,8 @@ impl App {
 
             button(
                 row![
-                    text("↻").size(15),
-                    text("Reload File").size(13),
+                    icons::icon_reload(theme::mocha::TEXT, 14.0),
+                    text(lang.reload_file()).size(13),
                 ]
                 .spacing(8)
                 .align_y(Alignment::Center),
@@ -311,13 +371,13 @@ impl App {
         )
         .style(theme::sidebar_style)
         .padding(16)
-        .width(Length::Fixed(230.0))
+        .width(Length::Fixed(240.0))
         .height(Length::Fill);
 
         // --- Main Content Area ---
         let tab_title = row![
             column![
-                text(self.current_tab.title())
+                text(self.current_tab.title(lang))
                     .size(24)
                     .color(theme::mocha::MAUVE),
                 text(format!("driftwm 0.19+ • {}", self.config_path.display()))
@@ -335,18 +395,19 @@ impl App {
                 BannerKind::Error => theme::alert_error_style,
             };
 
-            let prefix = match kind {
-                BannerKind::Success => "✓ ",
-                BannerKind::Warning => "⚠ ",
-                BannerKind::Error => "✕ ",
+            let icon_widget: Element<'static, Message> = match kind {
+                BannerKind::Success => icons::icon_check(theme::mocha::GREEN, 16.0).into(),
+                BannerKind::Warning => icons::icon_info(theme::mocha::YELLOW, 16.0).into(),
+                BannerKind::Error => icons::icon_trash(theme::mocha::RED, 16.0).into(),
             };
 
             container(
                 row![
-                    text(format!("{}{}", prefix, msg))
+                    icon_widget,
+                    text(msg.as_str())
                         .size(13)
                         .width(Length::Fill),
-                    button(text("Dismiss").size(11))
+                    button(text("✕").size(11))
                         .on_press(Message::DismissBanner)
                         .style(theme::secondary_button_style),
                 ]
@@ -360,13 +421,14 @@ impl App {
         });
 
         let tab_content: Element<Message> = match self.current_tab {
-            Tab::General => views::general::view(&self.config).map(Message::General),
-            Tab::Appearance => views::appearance::view(&self.config).map(Message::Appearance),
-            Tab::Background => views::background::view(&self.config).map(Message::Background),
+            Tab::General => views::general::view(&self.config, lang).map(Message::General),
+            Tab::Appearance => views::appearance::view(&self.config, lang).map(Message::Appearance),
+            Tab::Background => views::background::view(&self.config, lang).map(Message::Background),
             Tab::Bookmarks => {
-                views::bookmarks::view(&self.config, &self.bookmarks_state).map(Message::Bookmarks)
+                views::bookmarks::view(&self.config, &self.bookmarks_state, lang).map(Message::Bookmarks)
             }
-            Tab::Input => views::input::view(&self.config).map(Message::Input),
+            Tab::Input => views::input::view(&self.config, lang).map(Message::Input),
+            Tab::Settings => views::settings::view(&self.settings).map(Message::Settings),
         };
 
         let mut content_column = column![tab_title].spacing(16);

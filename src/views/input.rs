@@ -111,23 +111,37 @@ pub fn update(config: &mut DriftwmConfig, msg: InputMessage) {
     }
 }
 
-pub fn view(config: &DriftwmConfig) -> Element<'static, InputMessage> {
+use crate::i18n::Language;
+use crate::icons;
+
+pub fn view(config: &DriftwmConfig, lang: Language) -> Element<'static, InputMessage> {
     // Keyboard card
     let layout_val = config.input.keyboard.layout.clone().unwrap_or_else(|| "us".to_string());
     let variant_val = config.input.keyboard.variant.clone().unwrap_or_default();
     let options_val = config.input.keyboard.options.clone().unwrap_or_default();
     let model_val = config.input.keyboard.model.clone().unwrap_or_default();
     let rep_rate = config.input.keyboard.repeat_rate.unwrap_or(25) as f32;
-    let rep_del = config.input.keyboard.repeat_delay.unwrap_or(200) as f32;
+    let rep_del = config.input.keyboard.repeat_delay.unwrap_or(600) as f32;
 
     let card_keyboard = container(
         column![
-            text("Keyboard Configuration")
+            row![
+                icons::icon_input(mocha::MAUVE, 18.0),
+                text(match lang {
+                    Language::English => "Keyboard Configuration",
+                    Language::Russian => "Настройки клавиатуры",
+                })
                 .size(18)
                 .color(mocha::MAUVE),
-            text("XKB layout, key repeat timings and modifier preferences.")
-                .size(13)
-                .color(mocha::SUBTEXT0),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+            text(match lang {
+                Language::English => "XKB layout, key repeat timings and modifier preferences.",
+                Language::Russian => "Раскладка XKB, задержка автоповтора клавиш и параметры модификаторов.",
+            })
+            .size(13)
+            .color(mocha::SUBTEXT0),
 
             row![
                 text("Layout (e.g. us, ru):").size(14).color(mocha::TEXT).width(Length::Fixed(180.0)),
@@ -221,28 +235,63 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, InputMessage> {
 
     let card_trackpad = container(
         column![
-            text("Trackpad Configuration")
+            row![
+                icons::icon_general(mocha::TEAL, 18.0),
+                text(match lang {
+                    Language::English => "Trackpad Configuration",
+                    Language::Russian => "Настройки тачпада",
+                })
                 .size(18)
                 .color(mocha::MAUVE),
-            text("Pointer acceleration, tap behaviors and click method for trackpads.")
-                .size(13)
-                .color(mocha::SUBTEXT0),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+            text(match lang {
+                Language::English => "Pointer acceleration, tap behaviors and click method for trackpads.",
+                Language::Russian => "Ускорение курсора, жесты касания и метод клика для тачпадов.",
+            })
+            .size(13)
+            .color(mocha::SUBTEXT0),
 
-            checkbox("Enable trackpad hardware", config.input.trackpad.enable.unwrap_or(true))
-                .on_toggle(InputMessage::TrackpadEnableToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Enable trackpad hardware",
+                    Language::Russian => "Включить тачпад",
+                },
+                config.input.trackpad.enable.unwrap_or(true)
+            )
+            .on_toggle(InputMessage::TrackpadEnableToggled)
+            .size(16),
 
-            checkbox("Tap to click", config.input.trackpad.tap_to_click.unwrap_or(true))
-                .on_toggle(InputMessage::TapToClickToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Tap to click",
+                    Language::Russian => "Клик касанием (Tap to click)",
+                },
+                config.input.trackpad.tap_to_click.unwrap_or(true)
+            )
+            .on_toggle(InputMessage::TapToClickToggled)
+            .size(16),
 
-            checkbox("Natural scrolling (reverse scroll direction)", config.input.trackpad.natural_scroll.unwrap_or(true))
-                .on_toggle(InputMessage::NaturalScrollTrackpadToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Natural scrolling (reverse scroll direction)",
+                    Language::Russian => "Естественная прокрутка (реверс направления)",
+                },
+                config.input.trackpad.natural_scroll.unwrap_or(true)
+            )
+            .on_toggle(InputMessage::NaturalScrollTrackpadToggled)
+            .size(16),
 
-            checkbox("Tap and drag (double-tap-hold to drag)", config.input.trackpad.tap_and_drag.unwrap_or(true))
-                .on_toggle(InputMessage::TapAndDragToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Tap and drag (double-tap-hold to drag)",
+                    Language::Russian => "Перетаскивание касанием (двойное касание с удержанием)",
+                },
+                config.input.trackpad.tap_and_drag.unwrap_or(true)
+            )
+            .on_toggle(InputMessage::TapAndDragToggled)
+            .size(16),
 
             row![
                 text(format!("Pointer Accel Speed: {:.2}", pad_accel)).size(14).color(mocha::TEXT).width(Length::Fixed(180.0)),
@@ -272,13 +321,25 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, InputMessage> {
             .spacing(12)
             .align_y(Alignment::Center),
 
-            checkbox("Disable while typing (palm rejection)", config.input.trackpad.disable_while_typing.unwrap_or(true))
-                .on_toggle(InputMessage::DisableWhileTypingToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Disable while typing (palm rejection)",
+                    Language::Russian => "Отключать при наборе текста (защита от ладони)",
+                },
+                config.input.trackpad.disable_while_typing.unwrap_or(true)
+            )
+            .on_toggle(InputMessage::DisableWhileTypingToggled)
+            .size(16),
 
-            checkbox("Disable trackpad when external mouse is connected", config.input.trackpad.disable_on_external_mouse.unwrap_or(false))
-                .on_toggle(InputMessage::DisableOnExternalMouseToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Disable trackpad when external mouse is connected",
+                    Language::Russian => "Отключать тачпад при подключении внешней мыши",
+                },
+                config.input.trackpad.disable_on_external_mouse.unwrap_or(false)
+            )
+            .on_toggle(InputMessage::DisableOnExternalMouseToggled)
+            .size(16),
         ]
         .spacing(14),
     )
@@ -292,12 +353,23 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, InputMessage> {
 
     let card_mouse = container(
         column![
-            text("Mouse Configuration")
+            row![
+                icons::icon_settings(mocha::BLUE, 18.0),
+                text(match lang {
+                    Language::English => "Mouse Configuration",
+                    Language::Russian => "Настройки мыши",
+                })
                 .size(18)
                 .color(mocha::MAUVE),
-            text("Pointer settings for external mice.")
-                .size(13)
-                .color(mocha::SUBTEXT0),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+            text(match lang {
+                Language::English => "Pointer settings for external mice.",
+                Language::Russian => "Параметры курсора и кнопок для внешних мышей.",
+            })
+            .size(13)
+            .color(mocha::SUBTEXT0),
 
             row![
                 text(format!("Pointer Accel Speed: {:.2}", mouse_accel)).size(14).color(mocha::TEXT).width(Length::Fixed(180.0)),
@@ -318,13 +390,25 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, InputMessage> {
             .spacing(12)
             .align_y(Alignment::Center),
 
-            checkbox("Natural scrolling (reverse scroll direction)", config.input.mouse.natural_scroll.unwrap_or(false))
-                .on_toggle(InputMessage::NaturalScrollMouseToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Natural scrolling (reverse scroll direction)",
+                    Language::Russian => "Естественная прокрутка (реверс направления)",
+                },
+                config.input.mouse.natural_scroll.unwrap_or(false)
+            )
+            .on_toggle(InputMessage::NaturalScrollMouseToggled)
+            .size(16),
 
-            checkbox("Left-handed mode (swap left and right buttons)", config.input.mouse.left_handed.unwrap_or(false))
-                .on_toggle(InputMessage::LeftHandedToggled)
-                .size(16),
+            checkbox(
+                match lang {
+                    Language::English => "Left-handed mode (swap left and right buttons)",
+                    Language::Russian => "Режим для левши (поменять местами левую и правую кнопки)",
+                },
+                config.input.mouse.left_handed.unwrap_or(false)
+            )
+            .on_toggle(InputMessage::LeftHandedToggled)
+            .size(16),
         ]
         .spacing(14),
     )

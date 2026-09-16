@@ -169,24 +169,50 @@ pub fn update(
     }
 }
 
+use crate::i18n::Language;
+use crate::icons;
+
 pub fn view<'a>(
     config: &'a DriftwmConfig,
     state: &'a BookmarksState,
+    lang: Language,
 ) -> Element<'a, BookmarksMessage> {
     // Card 1: Bookmarks table
     let mut bm_col = column![
         row![
-            column![
-                text("Canvas Bookmarks")
+            row![
+                icons::icon_bookmarks(mocha::MAUVE, 18.0),
+                column![
+                    text(match lang {
+                        Language::English => "Canvas Bookmarks",
+                        Language::Russian => "Закладки холста",
+                    })
                     .size(18)
                     .color(mocha::MAUVE),
-                text("Named coordinate points [x, y] for quick jump shortcuts (Mod+1..4) and IPC.")
+                    text(match lang {
+                        Language::English => "Named coordinate points [x, y] for quick jump shortcuts (Mod+1..4) and IPC.",
+                        Language::Russian => "Именованные координаты [x, y] для быстрых переходов (Mod+1..4) и IPC.",
+                    })
                     .size(13)
                     .color(mocha::SUBTEXT0),
-            ],
-            button("Reset to Default 4 Corners")
-                .on_press(BookmarksMessage::ResetDefaultBookmarks)
-                .style(secondary_button_style),
+                ],
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center)
+            .width(Length::Fill),
+            button(
+                row![
+                    icons::icon_reload(mocha::TEXT, 13.0),
+                    text(match lang {
+                        Language::English => "Reset 4 Corners",
+                        Language::Russian => "Сбросить на 4 угла",
+                    }).size(12),
+                ]
+                .spacing(6)
+                .align_y(Alignment::Center)
+            )
+            .on_press(BookmarksMessage::ResetDefaultBookmarks)
+            .style(secondary_button_style),
         ]
         .spacing(12)
         .align_y(Alignment::Center),
@@ -209,9 +235,16 @@ pub fn view<'a>(
                         .size(14)
                         .color(mocha::LAVENDER)
                         .width(Length::Fill),
-                    button(text("Delete").size(12))
-                        .on_press(BookmarksMessage::DeleteBookmark(n))
-                        .style(danger_button_style),
+                    button(
+                        row![
+                            icons::icon_trash(mocha::BASE, 12.0),
+                            text(lang.delete()).size(12),
+                        ]
+                        .spacing(4)
+                        .align_y(Alignment::Center)
+                    )
+                    .on_press(BookmarksMessage::DeleteBookmark(n))
+                    .style(danger_button_style),
                 ]
                 .spacing(12)
                 .align_y(Alignment::Center),
@@ -223,21 +256,46 @@ pub fn view<'a>(
 
     // Add bookmark row
     let add_bm_row = row![
-        text_input("Name (e.g. 5 or work)", &state.new_bm_key)
-            .on_input(BookmarksMessage::NewBookmarkKeyChanged)
-            .style(input_style)
-            .width(Length::Fixed(180.0)),
-        text_input("X coord", &state.new_bm_x)
-            .on_input(BookmarksMessage::NewBookmarkXChanged)
-            .style(input_style)
-            .width(Length::Fixed(110.0)),
-        text_input("Y coord", &state.new_bm_y)
-            .on_input(BookmarksMessage::NewBookmarkYChanged)
-            .style(input_style)
-            .width(Length::Fixed(110.0)),
-        button(text("+ Add Bookmark").size(13))
-            .on_press(BookmarksMessage::AddBookmark)
-            .style(primary_button_style),
+        text_input(
+            match lang {
+                Language::English => "Name (e.g. 5 or work)",
+                Language::Russian => "Имя (напр. 5 или work)",
+            },
+            &state.new_bm_key
+        )
+        .on_input(BookmarksMessage::NewBookmarkKeyChanged)
+        .style(input_style)
+        .width(Length::Fixed(180.0)),
+        text_input(
+            match lang {
+                Language::English => "X coord",
+                Language::Russian => "Коорд. X",
+            },
+            &state.new_bm_x
+        )
+        .on_input(BookmarksMessage::NewBookmarkXChanged)
+        .style(input_style)
+        .width(Length::Fixed(110.0)),
+        text_input(
+            match lang {
+                Language::English => "Y coord",
+                Language::Russian => "Коорд. Y",
+            },
+            &state.new_bm_y
+        )
+        .on_input(BookmarksMessage::NewBookmarkYChanged)
+        .style(input_style)
+        .width(Length::Fixed(110.0)),
+        button(
+            row![
+                icons::icon_plus(mocha::BASE, 13.0),
+                text(lang.add_bookmark()).size(13),
+            ]
+            .spacing(6)
+            .align_y(Alignment::Center)
+        )
+        .on_press(BookmarksMessage::AddBookmark)
+        .style(primary_button_style),
     ]
     .spacing(10)
     .align_y(Alignment::Center);
@@ -251,12 +309,23 @@ pub fn view<'a>(
 
     // Card 2: Anchors
     let mut anchors_col = column![
-        text("Canvas Anchors")
+        row![
+            icons::icon_general(mocha::TEAL, 18.0),
+            text(match lang {
+                Language::English => "Canvas Anchors",
+                Language::Russian => "Якоря холста",
+            })
             .size(18)
             .color(mocha::MAUVE),
-        text("Unoccupied canvas coordinates discoverable by center-nearest actions (Mod+Arrow / 4-finger swipe).")
-            .size(13)
-            .color(mocha::SUBTEXT0),
+        ]
+        .spacing(8)
+        .align_y(Alignment::Center),
+        text(match lang {
+            Language::English => "Unoccupied canvas coordinates discoverable by center-nearest actions (Mod+Arrow / 4-finger swipe).",
+            Language::Russian => "Свободные координаты холста для быстрого перемещения (Mod+стрелка / свайп 4 пальцами).",
+        })
+        .size(13)
+        .color(mocha::SUBTEXT0),
     ]
     .spacing(12);
 
@@ -272,9 +341,16 @@ pub fn view<'a>(
                         .size(14)
                         .color(mocha::LAVENDER)
                         .width(Length::Fill),
-                    button(text("Delete").size(12))
-                        .on_press(BookmarksMessage::DeleteAnchor(i))
-                        .style(danger_button_style),
+                    button(
+                        row![
+                            icons::icon_trash(mocha::BASE, 12.0),
+                            text(lang.delete()).size(12),
+                        ]
+                        .spacing(4)
+                        .align_y(Alignment::Center)
+                    )
+                    .on_press(BookmarksMessage::DeleteAnchor(i))
+                    .style(danger_button_style),
                 ]
                 .spacing(12)
                 .align_y(Alignment::Center),
@@ -285,17 +361,36 @@ pub fn view<'a>(
     }
 
     let add_anchor_row = row![
-        text_input("X coordinate", &state.new_anchor_x)
-            .on_input(BookmarksMessage::NewAnchorXChanged)
-            .style(input_style)
-            .width(Length::Fixed(150.0)),
-        text_input("Y coordinate", &state.new_anchor_y)
-            .on_input(BookmarksMessage::NewAnchorYChanged)
-            .style(input_style)
-            .width(Length::Fixed(150.0)),
-        button(text("+ Add Anchor").size(13))
-            .on_press(BookmarksMessage::AddAnchor)
-            .style(primary_button_style),
+        text_input(
+            match lang {
+                Language::English => "X coordinate",
+                Language::Russian => "Координата X",
+            },
+            &state.new_anchor_x
+        )
+        .on_input(BookmarksMessage::NewAnchorXChanged)
+        .style(input_style)
+        .width(Length::Fixed(150.0)),
+        text_input(
+            match lang {
+                Language::English => "Y coordinate",
+                Language::Russian => "Координата Y",
+            },
+            &state.new_anchor_y
+        )
+        .on_input(BookmarksMessage::NewAnchorYChanged)
+        .style(input_style)
+        .width(Length::Fixed(150.0)),
+        button(
+            row![
+                icons::icon_plus(mocha::BASE, 13.0),
+                text(lang.add_anchor()).size(13),
+            ]
+            .spacing(6)
+            .align_y(Alignment::Center)
+        )
+        .on_press(BookmarksMessage::AddAnchor)
+        .style(primary_button_style),
     ]
     .spacing(10)
     .align_y(Alignment::Center);
@@ -319,12 +414,23 @@ pub fn view<'a>(
 
     let card_dynamics = container(
         column![
-            text("Camera & Pan Dynamics")
+            row![
+                icons::icon_settings(mocha::BLUE, 18.0),
+                text(match lang {
+                    Language::English => "Camera & Pan Dynamics",
+                    Language::Russian => "Динамика камеры и перемещения",
+                })
                 .size(18)
                 .color(mocha::MAUVE),
-            text("Smoothness, coasting momentum and step multipliers for viewport motion.")
-                .size(13)
-                .color(mocha::SUBTEXT0),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+            text(match lang {
+                Language::English => "Smoothness, coasting momentum and step multipliers for viewport motion.",
+                Language::Russian => "Плавность, инерция скольжения и шаг перемещения viewport по холсту.",
+            })
+            .size(13)
+            .color(mocha::SUBTEXT0),
 
             row![
                 text(format!("Camera Speed: {:.2}", cam_spd)).size(14).color(mocha::TEXT).width(Length::Fixed(200.0)),

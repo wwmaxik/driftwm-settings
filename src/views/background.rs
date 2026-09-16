@@ -68,7 +68,10 @@ pub fn update(config: &mut DriftwmConfig, msg: BackgroundMessage) {
     }
 }
 
-pub fn view(config: &DriftwmConfig) -> Element<'static, BackgroundMessage> {
+use crate::i18n::Language;
+use crate::icons;
+
+pub fn view(config: &DriftwmConfig, lang: Language) -> Element<'static, BackgroundMessage> {
     let kind_options = vec![
         "default".to_string(),
         "shader".to_string(),
@@ -87,23 +90,39 @@ pub fn view(config: &DriftwmConfig) -> Element<'static, BackgroundMessage> {
     let cache_budget = config.background.cache_budget_mb.unwrap_or(128) as f32;
     let anim_fps = config.background.animate_fps.unwrap_or(0) as f32;
 
-    let desc = match current_kind.as_str() {
-        "default" => "Default: Built-in dot-grid canvas with dynamic scale.",
-        "shader" => "Shader: Procedural GLSL wallpaper shader that pans and zooms with the canvas.",
-        "tile" => "Tile: Image tiled seamlessly across the infinite canvas.",
-        "wallpaper" => "Wallpaper: Fixed single image pinned to viewport (does not scroll or zoom).",
-        "none" => "None: No built-in wallpaper. Use with external Wayland daemons (swaybg, swww, mpvpaper).",
+    let desc = match (current_kind.as_str(), lang) {
+        ("default", Language::Russian) => "По умолчанию: встроенная точечная сетка Catppuccin с динамическим масштабированием.",
+        ("default", Language::English) => "Default: Built-in dot-grid canvas with dynamic scale.",
+        ("shader", Language::Russian) => "Шейдер: процедурный GLSL-шейдер, плавно панорамируемый вместе с холстом.",
+        ("shader", Language::English) => "Shader: Procedural GLSL wallpaper shader that pans and zooms with the canvas.",
+        ("tile", Language::Russian) => "Тайлинг: бесшовная текстура, замостившая весь бесконечный холст.",
+        ("tile", Language::English) => "Tile: Image tiled seamlessly across the infinite canvas.",
+        ("wallpaper", Language::Russian) => "Обои: фиксированная картинка, привязанная к экрану (не скроллится).",
+        ("wallpaper", Language::English) => "Wallpaper: Fixed single image pinned to viewport (does not scroll or zoom).",
+        ("none", Language::Russian) => "Отключен: без фона (для внешних демонов swaybg, swww, mpvpaper).",
+        ("none", Language::English) => "None: No built-in wallpaper. Use with external Wayland daemons (swaybg, swww, mpvpaper).",
         _ => "",
     };
 
     let card_kind = container(
         column![
-            text("Background Mode")
+            row![
+                icons::icon_background(mocha::MAUVE, 18.0),
+                text(match lang {
+                    Language::English => "Background Mode",
+                    Language::Russian => "Режим фона рабочего стола",
+                })
                 .size(18)
                 .color(mocha::MAUVE),
-            text("Select between built-in dot grid, custom GLSL shader, image tile, fixed wallpaper or external daemon.")
-                .size(13)
-                .color(mocha::SUBTEXT0),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+            text(match lang {
+                Language::English => "Select between built-in dot grid, custom GLSL shader, image tile, fixed wallpaper or external daemon.",
+                Language::Russian => "Выбор между сеткой, процедурным шейдером, тайлингом текстуры, обоями или внешним демоном.",
+            })
+            .size(13)
+            .color(mocha::SUBTEXT0),
 
             row![
                 text("Background Type:").size(14).color(mocha::TEXT).width(Length::Fixed(180.0)),

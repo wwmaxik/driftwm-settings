@@ -3,6 +3,9 @@ pub mod background;
 pub mod bookmarks;
 pub mod general;
 pub mod input;
+pub mod settings;
+
+use crate::i18n::Language;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tab {
@@ -11,34 +14,27 @@ pub enum Tab {
     Background,
     Bookmarks,
     Input,
+    Settings,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 5] = [
+    pub const ALL: [Tab; 6] = [
         Tab::General,
         Tab::Appearance,
         Tab::Background,
         Tab::Bookmarks,
         Tab::Input,
+        Tab::Settings,
     ];
 
-    pub fn title(&self) -> &'static str {
+    pub fn title(&self, lang: Language) -> &'static str {
         match self {
-            Tab::General => "General & Placement",
-            Tab::Appearance => "Appearance & Deco",
-            Tab::Background => "Background",
-            Tab::Bookmarks => "Bookmarks & Nav",
-            Tab::Input => "Input Devices",
-        }
-    }
-
-    pub fn icon(&self) -> &'static str {
-        match self {
-            Tab::General => "⚙",
-            Tab::Appearance => "🎨",
-            Tab::Background => "🖼",
-            Tab::Bookmarks => "🔖",
-            Tab::Input => "⌨",
+            Tab::General => lang.tab_general(),
+            Tab::Appearance => lang.tab_appearance(),
+            Tab::Background => lang.tab_background(),
+            Tab::Bookmarks => lang.tab_bookmarks(),
+            Tab::Input => lang.tab_input(),
+            Tab::Settings => lang.tab_settings(),
         }
     }
 }
